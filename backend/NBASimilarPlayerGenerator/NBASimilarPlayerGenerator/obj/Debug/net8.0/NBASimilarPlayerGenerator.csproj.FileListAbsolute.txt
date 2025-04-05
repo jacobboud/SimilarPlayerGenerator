@@ -38,3 +38,11 @@ C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimil
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\CsvHelper.dll
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\NBASimilarPlayerGenerator.sourcelink.json
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\player_dataset_CLEANED.csv
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\web.config
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\appsettings.Development.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\appsettings.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\career_recommendations.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\NBASimilarPlayerGenerator.deps.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\NBASimilarPlayerGenerator.runtimeconfig.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\NBASimilarPlayerGenerator.staticwebassets.endpoints.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\season_recommendations.json

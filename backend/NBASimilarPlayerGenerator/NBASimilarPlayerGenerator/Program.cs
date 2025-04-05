@@ -19,10 +19,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
-              .AllowCredentials()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.WithOrigins(
+            "http://localhost:3000", // local dev
+            "https://polite-mud-0ca1bbf1e.6.azurestaticapps.net" // deployed frontend
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 
