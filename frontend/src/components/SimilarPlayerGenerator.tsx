@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 
 interface Player {
   playerId: number;
   name: string;
   years: string;
+  teams?: string[];
+  careerStats?: Record<string, number>;
+  seasonStats?: Record<string, number>;
+  seasons?: {
+    year: number;
+    team: string;
+    stats: Record<string, number>;
+  }[];
+  similarityScore?: number;
 }
 
 export default function SimilarPlayerGenerator() {
@@ -15,6 +24,97 @@ export default function SimilarPlayerGenerator() {
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [usedSeason, setUsedSeason] = useState<number | null>(null);
   const [recommendations, setRecommendations] = useState<Player[]>([]);
+  const [showStats, setShowStats] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [recStatsShown, setRecStatsShown] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [recAdvancedShown, setRecAdvancedShown] = useState<
+    Record<string, boolean>
+  >({});
+
+  const basicStatKeys = [
+    "MIN",
+    "PTS",
+    "FGM",
+    "FGA",
+    "FG%",
+    "3PM",
+    "3PA",
+    "3P%",
+    "FTM",
+    "FTA",
+    "FT%",
+    "OREB",
+    "DREB",
+    "REB",
+    "AST",
+    "STL",
+    "BLK",
+    "TOV",
+    "PF",
+    "+/-",
+  ];
+
+  const advancedStatKeys = [
+    "OFFRTG",
+    "DEFRTG",
+    "NETRTG",
+    "AST%",
+    "AST/TO",
+    "AST RATIO",
+    "OREB%",
+    "DREB%",
+    "REB%",
+    "TO RATIO",
+    "EFG%",
+    "TS%",
+    "USG%",
+    "PACE",
+    "PIE",
+    "PTS OFF TO",
+    "2ND PTS",
+    "FBPS",
+    "PITP",
+    "OPP PTS OFF TO",
+    "OPP 2ND PTS",
+    "OPP FBPS",
+    "OPP PITP",
+    "BLKA",
+    "PFD",
+    "%FGA 2PT",
+    "%FGA 3PT",
+    "%PTS 2PT",
+    "%PTS 2PT MR",
+    "%PTS 3PT",
+    "%PTS FBPS",
+    "%PTS FT",
+    "%PTS OFFTO",
+    "%PTS PITP",
+    "2FGM %AST",
+    "2FGM %UAST",
+    "3FGM %AST",
+    "3FGM %UAST",
+    "FGM %AST",
+    "FGM %UAST",
+    "%FGM",
+    "%FGA",
+    "%3PM",
+    "%3PA",
+    "%FTM",
+    "%FTA",
+    "%OREB",
+    "%DREB",
+    "%REB",
+    "%AST",
+    "%TOV",
+    "%STL",
+    "%BLK",
+    "%BLKA",
+    "%PF",
+    "%PFD",
+    "%PTS",
+  ];
 
   const handleSearch = async () => {
     try {
@@ -25,6 +125,8 @@ export default function SimilarPlayerGenerator() {
       setSeasons([]);
       setSelectedSeason(null);
       setUsedSeason(null);
+      setShowStats(false);
+      setShowAdvanced(false);
     } catch (err) {
       console.error("Search failed:", err);
     }
@@ -33,7 +135,7 @@ export default function SimilarPlayerGenerator() {
   const handleSelectPlayer = async (player: Player) => {
     try {
       setSelectedPlayer(player);
-      setSearchResults([]); // 👈 This clears the search results list
+      setSearchResults([]);
       const res = await axios.get(
         `/api/similarplayer/seasons/${player.playerId}`
       );
@@ -41,6 +143,8 @@ export default function SimilarPlayerGenerator() {
       setRecommendations([]);
       setSelectedSeason(null);
       setUsedSeason(null);
+      setShowStats(false);
+      setShowAdvanced(false);
     } catch (err) {
       console.error("Season fetch failed:", err);
     }
@@ -48,18 +152,12 @@ export default function SimilarPlayerGenerator() {
 
   const generateRecommendations = async () => {
     if (!selectedPlayer) return;
-
-    // Clear existing recommendations first to avoid accidental appends
     setRecommendations([]);
 
     let url = `/api/similarplayer/career/${selectedPlayer.playerId}`;
     let isSeasonBased = false;
 
-    if (
-      selectedSeason !== null &&
-      selectedSeason !== undefined &&
-      selectedSeason !== ""
-    ) {
+    if (selectedSeason !== null) {
       url = `/api/similarplayer/season/${selectedPlayer.playerId}/${selectedSeason}`;
       isSeasonBased = true;
     }
@@ -67,14 +165,27 @@ export default function SimilarPlayerGenerator() {
     try {
       const res = await axios.get(url);
       const data: Player[] = res.data;
-
-      // Defensive: If backend always returns 5, slice is redundant but safe
       setRecommendations(data.slice(0, 5));
       setUsedSeason(isSeasonBased ? selectedSeason : null);
+      setRecStatsShown({});
+      setRecAdvancedShown({});
     } catch (err) {
       console.error("Failed to fetch recommendations:", err);
-      setRecommendations([]);
     }
+  };
+
+  const getSelectedPlayerTeam = () => {
+    if (!selectedPlayer) return "";
+    if (usedSeason === null) return selectedPlayer.teams?.join(", ");
+    const season = selectedPlayer.seasons?.find((s) => s.year === usedSeason);
+    return season?.team ?? "";
+  };
+
+  const getSelectedPlayerStats = () => {
+    if (!selectedPlayer) return null;
+    if (usedSeason === null) return selectedPlayer.careerStats;
+    const season = selectedPlayer.seasons?.find((s) => s.year === usedSeason);
+    return season?.stats ?? null;
   };
 
   return (
@@ -90,6 +201,7 @@ export default function SimilarPlayerGenerator() {
         Similar Player Generator
       </h1>
 
+      {/* Search */}
       <div style={{ marginTop: "30px" }}>
         <h2 style={{ fontSize: "1.25rem", marginBottom: "10px" }}>
           Step 1: Search for a Player
@@ -123,6 +235,7 @@ export default function SimilarPlayerGenerator() {
           </button>
         </div>
 
+        {/* Search Results */}
         <div style={{ maxWidth: "400px", margin: "0 auto" }}>
           {searchResults.map((player) => (
             <div
@@ -151,41 +264,112 @@ export default function SimilarPlayerGenerator() {
         </div>
       </div>
 
+      {/* Selected Player */}
       {selectedPlayer && (
         <div style={{ marginTop: "40px" }}>
           <div
             style={{
-              marginBottom: "10px",
               fontWeight: "bold",
               fontSize: "1.5rem",
+              marginBottom: "10px",
             }}
           >
-            Selected Player: {selectedPlayer.name} ({selectedPlayer.years})
+            Selected Player: {selectedPlayer.name}{" "}
+            {usedSeason ? `(${usedSeason})` : `(${selectedPlayer.years})`}
           </div>
 
+          {getSelectedPlayerTeam() && (
+            <div style={{ marginBottom: "10px" }}>
+              Team: {getSelectedPlayerTeam()}
+            </div>
+          )}
+
+          {showStats && getSelectedPlayerStats() && (
+            <div
+              style={{
+                maxHeight: "300px",
+                overflowY: "auto",
+                backgroundColor: "#ffffff",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                padding: "20px",
+                margin: "0 auto 20px",
+                width: "100%",
+                maxWidth: "600px",
+                textAlign: "left",
+              }}
+            >
+              <h3 style={{ marginBottom: "16px", textAlign: "center" }}>
+                {usedSeason ? "Season Stats" : "Career Stats"}
+              </h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  rowGap: "12px",
+                  columnGap: "32px",
+                }}
+              >
+                {[...basicStatKeys, ...(showAdvanced ? advancedStatKeys : [])]
+                  .filter((statKey) => statKey in getSelectedPlayerStats()!)
+                  .map((statKey) => (
+                    <div key={statKey}>
+                      <strong>{statKey}:</strong>{" "}
+                      {getSelectedPlayerStats()![statKey].toFixed(2)}
+                    </div>
+                  ))}
+              </div>
+              <div style={{ marginTop: "12px", textAlign: "center" }}>
+                <button
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  style={{
+                    padding: "6px 14px",
+                    backgroundColor: "#6c757d",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                  }}
+                >
+                  {showAdvanced ? "Hide Advanced Stats" : "Show Advanced Stats"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => setShowStats(!showStats)}
+            style={{
+              padding: "6px 14px",
+              marginBottom: "10px",
+              backgroundColor: "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+            }}
+          >
+            {showStats ? "Hide Stats" : "Show Stats"}
+          </button>
+
+          {/* Season Dropdown */}
           <h2 style={{ fontSize: "1.25rem", marginBottom: "10px" }}>
             Step 2: Select a Season
           </h2>
-
-          <div>
-            <select
-              value={selectedSeason ?? ""}
-              onChange={(e) =>
-                setSelectedSeason(
-                  e.target.value ? Number(e.target.value) : null
-                )
-              }
-              style={{ padding: "8px", width: "150px", marginBottom: "10px" }}
-            >
-              <option value="">Career</option>
-              {seasons.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-
+          <select
+            value={selectedSeason ?? ""}
+            onChange={(e) =>
+              setSelectedSeason(e.target.value ? Number(e.target.value) : null)
+            }
+            style={{ padding: "8px", width: "150px", marginBottom: "10px" }}
+          >
+            <option value="">Career</option>
+            {seasons.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <br></br>
+          <br></br>
           <button
             onClick={generateRecommendations}
             style={{
@@ -201,6 +385,7 @@ export default function SimilarPlayerGenerator() {
         </div>
       )}
 
+      {/* Recommendations */}
       {recommendations.length > 0 && (
         <div style={{ marginTop: "40px" }}>
           <h2 style={{ fontSize: "1.25rem", marginBottom: "15px" }}>
@@ -210,15 +395,126 @@ export default function SimilarPlayerGenerator() {
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
+              gap: "20px",
               alignItems: "center",
             }}
           >
-            {recommendations.map((player) => (
-              <div key={player.playerId}>
-                {player.name} ({player.years})
-              </div>
-            ))}
+            {recommendations.map((player, index) => {
+              const stats = usedSeason
+                ? player.seasonStats
+                : player.careerStats;
+              const team = usedSeason
+                ? player.teams?.[0] ?? ""
+                : player.teams?.join(", ");
+              const key = `${player.playerId}_${
+                player.similarityScore ?? index
+              }`;
+              const isShown = recStatsShown[key] ?? false;
+              const isAdv = recAdvancedShown[key] ?? false;
+
+              return (
+                <div
+                  key={key}
+                  style={{
+                    backgroundColor: "white",
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                    padding: "20px",
+                    width: "100%",
+                    maxWidth: "600px",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  <div>
+                    <strong>{player.name}</strong> ({player.years})
+                  </div>
+                  {team && <div>Team(s): {team}</div>}
+                  <div>
+                    Similarity: {(player.similarityScore! * 100).toFixed(2)}%
+                  </div>
+                  <button
+                    onClick={() =>
+                      setRecStatsShown((prev) => ({
+                        ...prev,
+                        [key]: !prev[key],
+                      }))
+                    }
+                    style={{
+                      marginTop: "6px",
+                      padding: "6px 12px",
+                      backgroundColor: "#28a745",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    {isShown ? "Hide Stats" : "Show Stats"}
+                  </button>
+
+                  {isShown && stats && (
+                    <div
+                      style={{
+                        maxHeight: "300px",
+                        overflowY: "auto",
+                        backgroundColor: "#ffffff",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                        padding: "20px",
+                        marginTop: "10px",
+                        width: "100%",
+                        maxWidth: "600px",
+                        marginLeft: "auto",
+                        marginRight: "auto",
+                        textAlign: "left",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(180px, 1fr))",
+                          rowGap: "12px",
+                          columnGap: "32px",
+                        }}
+                      >
+                        {[
+                          ...basicStatKeys,
+                          ...(isAdv ? advancedStatKeys : []),
+                        ].map((key) =>
+                          key in stats ? (
+                            <div key={key}>
+                              <strong>{key}:</strong> {stats[key].toFixed(2)}
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+
+                      <div style={{ marginTop: "12px", textAlign: "center" }}>
+                        <button
+                          onClick={() =>
+                            setRecAdvancedShown((prev) => ({
+                              ...prev,
+                              [key]: !prev[key],
+                            }))
+                          }
+                          style={{
+                            padding: "6px 14px",
+                            backgroundColor: "#6c757d",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          {isAdv
+                            ? "Hide Advanced Stats"
+                            : "Show Advanced Stats"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

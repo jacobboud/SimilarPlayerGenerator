@@ -38,4 +38,4 @@ C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimil
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\ref\NBASimilarPlayerGenerator.dll
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\CsvHelper.dll
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\player_metadata.json
-C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\player_dateset_CLEANED.csv
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\NBASimilarPlayerGenerator.sourcelink.json
