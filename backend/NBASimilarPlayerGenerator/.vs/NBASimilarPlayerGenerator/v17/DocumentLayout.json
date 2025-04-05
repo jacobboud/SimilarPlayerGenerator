@@ -50,57 +50,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 1,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "SeasonSimilarPlayerEntry.cs",
-              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\SeasonSimilarPlayerEntry.cs",
-              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Models\\SeasonSimilarPlayerEntry.cs",
-              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\SeasonSimilarPlayerEntry.cs",
-              "RelativeToolTip": "NBASimilarPlayerGenerator\\Models\\SeasonSimilarPlayerEntry.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-05T19:37:06.841Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
-              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Program.cs",
-              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
-              "RelativeToolTip": "NBASimilarPlayerGenerator\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-04T19:16:46.516Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "SeasonDto.cs",
-              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\SeasonDto.cs",
-              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Models\\SeasonDto.cs",
-              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\SeasonDto.cs",
-              "RelativeToolTip": "NBASimilarPlayerGenerator\\Models\\SeasonDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-05T19:50:23.106Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "SimilarPlayerController.cs",
-              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
-              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
-              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
-              "RelativeToolTip": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
-              "ViewState": "AgIAABsAAAAAAAAAAAAAACkAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-04T19:01:07.039Z"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 4,
@@ -125,6 +76,54 @@
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-04T20:49:22.841Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SimilarPlayerController.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAAACkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T19:01:07.039Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "SeasonDto.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\SeasonDto.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Models\\SeasonDto.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\SeasonDto.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Models\\SeasonDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T19:50:23.106Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Program.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T19:16:46.516Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "SeasonSimilarPlayerEntry.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\SeasonSimilarPlayerEntry.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Models\\SeasonSimilarPlayerEntry.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\NBA\\NBASimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\SeasonSimilarPlayerEntry.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Models\\SeasonSimilarPlayerEntry.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T19:37:06.841Z"
             },
             {
               "$type": "Document",

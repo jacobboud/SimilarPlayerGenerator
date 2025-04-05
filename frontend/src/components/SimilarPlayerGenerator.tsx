@@ -280,7 +280,7 @@ export default function SimilarPlayerGenerator() {
 
           {getSelectedPlayerTeam() && (
             <div style={{ marginBottom: "10px" }}>
-              Team: {getSelectedPlayerTeam()}
+              Team(s): {getSelectedPlayerTeam()}
             </div>
           )}
 
