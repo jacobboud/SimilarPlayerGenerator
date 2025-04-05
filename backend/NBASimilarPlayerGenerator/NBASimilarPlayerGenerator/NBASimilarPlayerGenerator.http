@@ -1,0 +1,6 @@
+@NBASimilarPlayerGenerator_HostAddress = http://localhost:5117
+
+GET {{NBASimilarPlayerGenerator_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
