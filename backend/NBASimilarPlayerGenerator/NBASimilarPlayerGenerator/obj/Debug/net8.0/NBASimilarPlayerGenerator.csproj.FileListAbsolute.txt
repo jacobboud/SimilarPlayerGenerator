@@ -29,7 +29,6 @@ C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimil
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\staticwebassets\msbuild.buildMultiTargeting.NBASimilarPlayerGenerator.props
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\staticwebassets\msbuild.buildTransitive.NBASimilarPlayerGenerator.props
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\staticwebassets.pack.json
-C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\NBASimil.874F44B2.Up2Date
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\NBASimilarPlayerGenerator.dll
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\refint\NBASimilarPlayerGenerator.dll
@@ -37,5 +36,5 @@ C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimil
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\NBASimilarPlayerGenerator.genruntimeconfig.cache
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\ref\NBASimilarPlayerGenerator.dll
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\CsvHelper.dll
-C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\player_metadata.json
 C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\NBASimilarPlayerGenerator.sourcelink.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\player_dataset_CLEANED.csv

@@ -12,9 +12,12 @@ public class SimilarPlayerController : ControllerBase
         _recommendationService = recommendationService;
     }
 
-    [HttpGet("players")] // For dynamic search
-    public IActionResult GetPlayers(string query)
+    [HttpGet("players")]
+    public IActionResult GetPlayers([FromQuery] string query)
     {
+        if (string.IsNullOrWhiteSpace(query) || query.Length > 100)
+            return BadRequest("Invalid player name query.");
+
         var players = _recommendationService.SearchPlayers(query);
         return Ok(players);
     }
@@ -22,6 +25,9 @@ public class SimilarPlayerController : ControllerBase
     [HttpGet("career/{playerId}")]
     public IActionResult GetCareerRecommendations(int playerId)
     {
+        if (playerId <= 0)
+            return BadRequest("Invalid player ID.");
+
         var recs = _recommendationService.GetCareerRecommendations(playerId);
         return Ok(recs);
     }
@@ -29,6 +35,9 @@ public class SimilarPlayerController : ControllerBase
     [HttpGet("season/{playerId}/{season}")]
     public IActionResult GetSeasonRecommendations(int playerId, int season)
     {
+        if (playerId <= 0 || season <= 0)
+            return BadRequest("Invalid player ID or season.");
+
         var recs = _recommendationService.GetSeasonRecommendations(playerId, season);
         return Ok(recs);
     }
@@ -36,6 +45,9 @@ public class SimilarPlayerController : ControllerBase
     [HttpGet("seasons/{playerId}")]
     public IActionResult GetAvailableSeasons(int playerId)
     {
+        if (playerId <= 0)
+            return BadRequest("Invalid player ID.");
+
         var seasons = _recommendationService.GetSeasonsForPlayer(playerId);
         return Ok(seasons);
     }

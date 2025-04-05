@@ -1,0 +1,15 @@
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\NBASimilarPlayerGenerator.exe
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\appsettings.Development.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\appsettings.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\career_recommendations.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\season_recommendations.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\player_dataset_CLEANED.csv
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\NBASimilarPlayerGenerator.dll
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\NBASimilarPlayerGenerator.deps.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\NBASimilarPlayerGenerator.runtimeconfig.json
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\NBASimilarPlayerGenerator.pdb
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\CsvHelper.dll
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\Microsoft.OpenApi.dll
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\jacob\OneDrive\Documents\NBA\NBASimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\publish\Swashbuckle.AspNetCore.SwaggerUI.dll

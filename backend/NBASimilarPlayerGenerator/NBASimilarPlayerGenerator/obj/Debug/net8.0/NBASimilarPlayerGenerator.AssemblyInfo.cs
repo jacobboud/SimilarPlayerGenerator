@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NBASimilarPlayerGenerator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3728e4e16f54e1501203cb31d43da3796243f08d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+618874226de55dd519e6685b97d4c5749240d6a5")]
 [assembly: System.Reflection.AssemblyProductAttribute("NBASimilarPlayerGenerator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NBASimilarPlayerGenerator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
