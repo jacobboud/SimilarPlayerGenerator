@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 
 interface Player {
@@ -118,7 +118,9 @@ export default function SimilarPlayerGenerator() {
 
   const handleSearch = async () => {
     try {
-      const res = await axios.get(`/api/similarplayer/players?query=${query}`);
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}players?query=${query}`
+      );
       setSearchResults(res.data);
       setSelectedPlayer(null);
       setRecommendations([]);
@@ -137,7 +139,7 @@ export default function SimilarPlayerGenerator() {
       setSelectedPlayer(player);
       setSearchResults([]);
       const res = await axios.get(
-        `/api/similarplayer/seasons/${player.playerId}`
+        `${import.meta.env.VITE_API_BASE_URL}seasons/${player.playerId}`
       );
       setSeasons(res.data);
       setRecommendations([]);
@@ -154,11 +156,15 @@ export default function SimilarPlayerGenerator() {
     if (!selectedPlayer) return;
     setRecommendations([]);
 
-    let url = `/api/similarplayer/career/${selectedPlayer.playerId}`;
+    let url = `${import.meta.env.VITE_API_BASE_URL}career/${
+      selectedPlayer.playerId
+    }`;
     let isSeasonBased = false;
 
     if (selectedSeason !== null) {
-      url = `/api/similarplayer/season/${selectedPlayer.playerId}/${selectedSeason}`;
+      url = `${import.meta.env.VITE_API_BASE_URL}season/${
+        selectedPlayer.playerId
+      }/${selectedSeason}`;
       isSeasonBased = true;
     }
 

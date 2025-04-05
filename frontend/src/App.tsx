@@ -1,4 +1,3 @@
-import React from "react";
 import Recommender from "./components/SimilarPlayerGenerator";
 
 function App() {
