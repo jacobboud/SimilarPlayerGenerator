@@ -1,0 +1,4 @@
+{
+  "appService.defaultWebAppToDeploy": "undefined/subscriptions/a08e65cd-e463-42ec-bdb2-9e4079bce2df/resourceGroups/appsvc_windows_eastus/providers/Microsoft.Web/sites/NBASimilarPlayerGenerator-backend",
+  "appService.deploySubpath": "backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\publish"
+}
