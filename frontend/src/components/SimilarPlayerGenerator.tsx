@@ -199,25 +199,27 @@ export default function SimilarPlayerGenerator() {
       style={{
         minHeight: "100vh",
         backgroundColor: "#f9f9f9",
-        paddingTop: "50px",
+        padding: "30px 16px",
         textAlign: "center",
       }}
     >
-      <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", color: "#1f2937" }}>
+      <h1 style={{ fontSize: "2rem", fontWeight: "bold", color: "#1f2937" }}>
         Similar Player Generator
       </h1>
 
       {/* Search */}
       <div style={{ marginTop: "30px" }}>
-        <h2 style={{ fontSize: "1.25rem", marginBottom: "10px" }}>
+        <h2 style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
           Step 1: Search for a Player
         </h2>
         <div
           style={{
             display: "flex",
-            justifyContent: "center",
+            flexDirection: "column",
+            alignItems: "center",
             gap: "10px",
             marginBottom: "10px",
+            width: "100%",
           }}
         >
           <input
@@ -225,16 +227,17 @@ export default function SimilarPlayerGenerator() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Type a player name..."
-            style={{ padding: "8px", width: "300px" }}
+            style={{ padding: "10px", width: "90vw", maxWidth: "400px" }}
           />
           <button
             onClick={handleSearch}
             style={{
-              padding: "8px 16px",
+              padding: "10px 20px",
               backgroundColor: "#007bff",
               color: "white",
               border: "none",
               borderRadius: "4px",
+              width: "fit-content",
             }}
           >
             Search
@@ -276,7 +279,7 @@ export default function SimilarPlayerGenerator() {
           <div
             style={{
               fontWeight: "bold",
-              fontSize: "1.5rem",
+              fontSize: "1.25rem",
               marginBottom: "10px",
             }}
           >
@@ -300,7 +303,7 @@ export default function SimilarPlayerGenerator() {
                 borderRadius: "4px",
                 padding: "20px",
                 margin: "0 auto 20px",
-                width: "100%",
+                width: "90vw",
                 maxWidth: "600px",
                 textAlign: "left",
               }}
@@ -311,9 +314,9 @@ export default function SimilarPlayerGenerator() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
                   rowGap: "12px",
-                  columnGap: "32px",
+                  columnGap: "24px",
                 }}
               >
                 {[...basicStatKeys, ...(showAdvanced ? advancedStatKeys : [])]
@@ -357,7 +360,7 @@ export default function SimilarPlayerGenerator() {
           </button>
 
           {/* Season Dropdown */}
-          <h2 style={{ fontSize: "1.25rem", marginBottom: "10px" }}>
+          <h2 style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
             Step 2: Select a Season
           </h2>
           <select
@@ -365,7 +368,12 @@ export default function SimilarPlayerGenerator() {
             onChange={(e) =>
               setSelectedSeason(e.target.value ? Number(e.target.value) : null)
             }
-            style={{ padding: "8px", width: "150px", marginBottom: "10px" }}
+            style={{
+              padding: "8px",
+              width: "90vw",
+              maxWidth: "200px",
+              marginBottom: "10px",
+            }}
           >
             <option value="">Career</option>
             {seasons.map((s) => (
@@ -374,8 +382,8 @@ export default function SimilarPlayerGenerator() {
               </option>
             ))}
           </select>
-          <br></br>
-          <br></br>
+          <br />
+          <br />
           <button
             onClick={generateRecommendations}
             style={{
@@ -394,7 +402,7 @@ export default function SimilarPlayerGenerator() {
       {/* Recommendations */}
       {recommendations.length > 0 && (
         <div style={{ marginTop: "40px" }}>
-          <h2 style={{ fontSize: "1.25rem", marginBottom: "15px" }}>
+          <h2 style={{ fontSize: "1.2rem", marginBottom: "15px" }}>
             Similar Players
           </h2>
           <div
@@ -426,7 +434,7 @@ export default function SimilarPlayerGenerator() {
                     border: "1px solid #ccc",
                     borderRadius: "8px",
                     padding: "20px",
-                    width: "100%",
+                    width: "90vw",
                     maxWidth: "600px",
                     boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
                   }}
@@ -468,9 +476,6 @@ export default function SimilarPlayerGenerator() {
                         padding: "20px",
                         marginTop: "10px",
                         width: "100%",
-                        maxWidth: "600px",
-                        marginLeft: "auto",
-                        marginRight: "auto",
                         textAlign: "left",
                       }}
                     >
@@ -478,23 +483,19 @@ export default function SimilarPlayerGenerator() {
                         style={{
                           display: "grid",
                           gridTemplateColumns:
-                            "repeat(auto-fit, minmax(180px, 1fr))",
+                            "repeat(auto-fit, minmax(150px, 1fr))",
                           rowGap: "12px",
-                          columnGap: "32px",
+                          columnGap: "24px",
                         }}
                       >
-                        {[
-                          ...basicStatKeys,
-                          ...(isAdv ? advancedStatKeys : []),
-                        ].map((key) =>
-                          key in stats ? (
+                        {[...basicStatKeys, ...(isAdv ? advancedStatKeys : [])]
+                          .filter((key) => key in stats)
+                          .map((key) => (
                             <div key={key}>
                               <strong>{key}:</strong> {stats[key].toFixed(2)}
                             </div>
-                          ) : null
-                        )}
+                          ))}
                       </div>
-
                       <div style={{ marginTop: "12px", textAlign: "center" }}>
                         <button
                           onClick={() =>
