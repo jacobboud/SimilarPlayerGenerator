@@ -26,6 +26,7 @@ export default function SimilarPlayerGenerator() {
   const [recommendations, setRecommendations] = useState<Player[]>([]);
   const [showStats, setShowStats] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [recStatsShown, setRecStatsShown] = useState<Record<string, boolean>>(
     {}
   );
@@ -206,6 +207,52 @@ export default function SimilarPlayerGenerator() {
       <h1 style={{ fontSize: "2rem", fontWeight: "bold", color: "#1f2937" }}>
         Similar Player Generator
       </h1>
+
+      <div style={{ marginTop: "10px", marginBottom: "20px" }}>
+        <button
+          onClick={() => setShowDisclaimer((prev) => !prev)}
+          style={{
+            padding: "6px 14px",
+            backgroundColor: "#6c757d",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+          }}
+        >
+          {showDisclaimer ? "Hide Disclaimer" : "Show Disclaimer"}
+        </button>
+
+        {showDisclaimer && (
+          <div
+            style={{
+              marginTop: "15px",
+              padding: "15px",
+              backgroundColor: "#f1f1f1",
+              border: "1px solid #ccc",
+              borderRadius: "6px",
+              textAlign: "left",
+              maxWidth: "600px",
+              marginLeft: "auto",
+              marginRight: "auto",
+              color: "#1f2937",
+            }}
+          >
+            <ul style={{ paddingLeft: "20px", margin: 0 }}>
+              <li>Stats are from the play-by-play era (1996–97 to 2023–24)</li>
+              <li>
+                “Career” stats = seasons from 1997–2024 (excludes current season
+                & pre-1996)
+              </li>
+              <li>Averages include all games (regular season + playoffs)</li>
+              <li>
+                Built using a cosine similarity model over basic & advanced
+                stats
+              </li>
+              <li>Similarity % is based on full statistical profiles</li>
+            </ul>
+          </div>
+        )}
+      </div>
 
       {/* Search */}
       <div style={{ marginTop: "30px" }}>
