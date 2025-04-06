@@ -28,6 +28,7 @@ export default function SimilarPlayerGenerator() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [searchCompleted, setSearchCompleted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [recStatsShown, setRecStatsShown] = useState<Record<string, boolean>>(
     {}
   );
@@ -120,6 +121,7 @@ export default function SimilarPlayerGenerator() {
 
   const handleSearch = async () => {
     try {
+      setLoading(true); // Start loading
       setSearchCompleted(false); // reset before searching
       const res = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}players?query=${query}`
@@ -136,6 +138,8 @@ export default function SimilarPlayerGenerator() {
     } catch (err) {
       console.error("Search failed:", err);
       setSearchCompleted(true); // also consider it done on error
+    } finally {
+      setLoading(false); // Always stop loading
     }
   };
 
@@ -295,6 +299,14 @@ export default function SimilarPlayerGenerator() {
             Search
           </button>
         </div>
+
+        {loading && (
+          <div
+            style={{ marginTop: "10px", color: "#007bff", fontWeight: "bold" }}
+          >
+            Searching...
+          </div>
+        )}
 
         {/* Search Results */}
         <div style={{ maxWidth: "400px", margin: "0 auto" }}>
