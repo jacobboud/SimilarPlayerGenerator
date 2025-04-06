@@ -205,7 +205,7 @@ export default function SimilarPlayerGenerator() {
       }}
     >
       <h1 style={{ fontSize: "2rem", fontWeight: "bold", color: "#1f2937" }}>
-        Similar Player Generator
+        NBA Similar Player Generator
       </h1>
 
       <div style={{ marginTop: "10px", marginBottom: "20px" }}>
