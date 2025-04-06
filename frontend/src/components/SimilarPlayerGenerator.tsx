@@ -27,6 +27,7 @@ export default function SimilarPlayerGenerator() {
   const [showStats, setShowStats] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [searchCompleted, setSearchCompleted] = useState(false);
   const [recStatsShown, setRecStatsShown] = useState<Record<string, boolean>>(
     {}
   );
@@ -119,10 +120,12 @@ export default function SimilarPlayerGenerator() {
 
   const handleSearch = async () => {
     try {
+      setSearchCompleted(false); // reset before searching
       const res = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}players?query=${query}`
       );
       setSearchResults(res.data);
+      setSearchCompleted(true); // only set to true *after* data is received
       setSelectedPlayer(null);
       setRecommendations([]);
       setSeasons([]);
@@ -132,13 +135,15 @@ export default function SimilarPlayerGenerator() {
       setShowAdvanced(false);
     } catch (err) {
       console.error("Search failed:", err);
+      setSearchCompleted(true); // also consider it done on error
     }
   };
 
   const handleSelectPlayer = async (player: Player) => {
     try {
       setSelectedPlayer(player);
-      setSearchResults([]);
+      setSearchResults([]); // clear the search results
+      setSearchCompleted(false); // also clear the search completion flag ✅
       const res = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}seasons/${player.playerId}`
       );
@@ -293,30 +298,49 @@ export default function SimilarPlayerGenerator() {
 
         {/* Search Results */}
         <div style={{ maxWidth: "400px", margin: "0 auto" }}>
-          {searchResults.map((player) => (
-            <div
-              key={player.playerId}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "8px",
-                border: "1px solid #ccc",
-                marginBottom: "5px",
-                borderRadius: "4px",
-              }}
-            >
-              <span>
-                {player.name} ({player.years})
-              </span>
-              <button
-                onClick={() => handleSelectPlayer(player)}
-                style={{ padding: "4px 12px", borderRadius: "4px" }}
+          {searchResults.length > 0 ? (
+            searchResults.map((player) => (
+              <div
+                key={player.playerId}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "8px",
+                  border: "1px solid #ccc",
+                  marginBottom: "5px",
+                  borderRadius: "4px",
+                }}
               >
-                Select
-              </button>
+                <span>
+                  {player.name} ({player.years})
+                </span>
+                <button
+                  onClick={() => handleSelectPlayer(player)}
+                  style={{ padding: "4px 12px", borderRadius: "4px" }}
+                >
+                  Select
+                </button>
+              </div>
+            ))
+          ) : searchCompleted ? (
+            <div
+              style={{ color: "#dc3545", marginTop: "10px", textAlign: "left" }}
+            >
+              <p style={{ fontWeight: "bold" }}>No players found.</p>
+              <p>Possible fixes:</p>
+              <ul style={{ paddingLeft: "20px" }}>
+                <li>Ensure the player's name is spelled correctly</li>
+                <li>
+                  Ensure the player did not retire prior to the 1996-97 season
+                </li>
+                <li>
+                  Ensure the player did not enter the league after the 2023-24
+                  season
+                </li>
+              </ul>
             </div>
-          ))}
+          ) : null}
         </div>
       </div>
 
