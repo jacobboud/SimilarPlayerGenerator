@@ -356,7 +356,7 @@ export default function SimilarPlayerGenerator() {
               }}
             >
               <h3 style={{ marginBottom: "16px", textAlign: "center" }}>
-                {usedSeason ? "Season Stats" : "Career Stats"}
+                Stats
               </h3>
               <div
                 style={{
