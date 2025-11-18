@@ -1,6 +1,6 @@
 [
   {
-    "ContainingType": "SimilarPlayerController",
+    "ContainingType": "NBASimilarPlayerGenerator.Controllers.SimilarPlayerController",
     "Method": "GetCareerRecommendations",
     "RelativePath": "api/similarplayer/career/{playerId}",
     "HttpMethod": "GET",
@@ -9,14 +9,29 @@
     "Parameters": [
       {
         "Name": "playerId",
-        "Type": "System.Int32",
+        "Type": "System.String",
         "IsRequired": true
+      },
+      {
+        "Name": "groupsPreset",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "groups",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "topN",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "SimilarPlayerController",
+    "ContainingType": "NBASimilarPlayerGenerator.Controllers.SimilarPlayerController",
     "Method": "GetPlayers",
     "RelativePath": "api/similarplayer/players",
     "HttpMethod": "GET",
@@ -32,7 +47,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "SimilarPlayerController",
+    "ContainingType": "NBASimilarPlayerGenerator.Controllers.SimilarPlayerController",
     "Method": "GetSeasonRecommendations",
     "RelativePath": "api/similarplayer/season/{playerId}/{season}",
     "HttpMethod": "GET",
@@ -41,19 +56,34 @@
     "Parameters": [
       {
         "Name": "playerId",
-        "Type": "System.Int32",
+        "Type": "System.String",
         "IsRequired": true
       },
       {
         "Name": "season",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "groupsPreset",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "groups",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "topN",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "SimilarPlayerController",
+    "ContainingType": "NBASimilarPlayerGenerator.Controllers.SimilarPlayerController",
     "Method": "GetAvailableSeasons",
     "RelativePath": "api/similarplayer/seasons/{playerId}",
     "HttpMethod": "GET",
@@ -62,7 +92,7 @@
     "Parameters": [
       {
         "Name": "playerId",
-        "Type": "System.Int32",
+        "Type": "System.String",
         "IsRequired": true
       }
     ],

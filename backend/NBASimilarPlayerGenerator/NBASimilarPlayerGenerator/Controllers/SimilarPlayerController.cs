@@ -1,54 +1,87 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/SimilarPlayerController.cs
+using System;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 using NBASimilarPlayerGenerator.Services;
 
-[ApiController]
-[Route("api/[controller]")]
-public class SimilarPlayerController : ControllerBase
+namespace NBASimilarPlayerGenerator.Controllers
 {
-    private readonly IRecommendationService _recommendationService;
-
-    public SimilarPlayerController(IRecommendationService recommendationService)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class SimilarPlayerController : ControllerBase
     {
-        _recommendationService = recommendationService;
-    }
+        private readonly IRecommendationService _recommendationService;
 
-    [HttpGet("players")]
-    public IActionResult GetPlayers([FromQuery] string query)
-    {
-        if (string.IsNullOrWhiteSpace(query) || query.Length > 100)
-            return BadRequest("Invalid player name query.");
+        public SimilarPlayerController(IRecommendationService recommendationService)
+        {
+            _recommendationService = recommendationService;
+        }
 
-        var players = _recommendationService.SearchPlayers(query);
-        return Ok(players);
-    }
+        [HttpGet("players")]
+        public IActionResult GetPlayers([FromQuery] string query)
+        {
+            if (string.IsNullOrWhiteSpace(query) || query.Length > 100)
+                return BadRequest("Invalid player name query.");
 
-    [HttpGet("career/{playerId}")]
-    public IActionResult GetCareerRecommendations(int playerId)
-    {
-        if (playerId <= 0)
-            return BadRequest("Invalid player ID.");
+            var players = _recommendationService.SearchPlayers(query);
+            return Ok(players);
+        }
 
-        var recs = _recommendationService.GetCareerRecommendations(playerId);
-        return Ok(recs);
-    }
+        [HttpGet("career/{playerId}")]
+        public IActionResult GetCareerRecommendations(
+            string playerId,
+            [FromQuery] string? groupsPreset,
+            [FromQuery] string? groups,
+            [FromQuery] int topN = 10)
+        {
+            if (string.IsNullOrWhiteSpace(playerId))
+                return BadRequest("Invalid player ID.");
 
-    [HttpGet("season/{playerId}/{season}")]
-    public IActionResult GetSeasonRecommendations(int playerId, int season)
-    {
-        if (playerId <= 0 || season <= 0)
-            return BadRequest("Invalid player ID or season.");
+            var options = new RecommendationOptions
+            {
+                GroupsPreset = groupsPreset,
+                TopN = topN,
+                Groups = groups?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToList()
+            };
 
-        var recs = _recommendationService.GetSeasonRecommendations(playerId, season);
-        return Ok(recs);
-    }
+            var recs = _recommendationService.GetCareerRecommendations(playerId, options);
+            return Ok(recs);
+        }
 
-    [HttpGet("seasons/{playerId}")]
-    public IActionResult GetAvailableSeasons(int playerId)
-    {
-        if (playerId <= 0)
-            return BadRequest("Invalid player ID.");
+        [HttpGet("season/{playerId}/{season}")]
+        public IActionResult GetSeasonRecommendations(
+            string playerId,
+            int season,
+            [FromQuery] string? groupsPreset,
+            [FromQuery] string? groups,
+            [FromQuery] int topN = 10)
+        {
+            if (string.IsNullOrWhiteSpace(playerId) || season <= 0)
+                return BadRequest("Invalid player ID or season.");
 
-        var seasons = _recommendationService.GetSeasonsForPlayer(playerId);
-        return Ok(seasons);
+            var options = new RecommendationOptions
+            {
+                GroupsPreset = groupsPreset,
+                TopN = topN,
+                Groups = groups?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToList()
+            };
+
+            var recs = _recommendationService.GetSeasonRecommendations(playerId, season, options);
+            return Ok(recs);
+        }
+
+        [HttpGet("seasons/{playerId}")]
+        public IActionResult GetAvailableSeasons(string playerId)
+        {
+            if (string.IsNullOrWhiteSpace(playerId))
+                return BadRequest("Invalid player ID.");
+
+            var seasons = _recommendationService.GetSeasonsForPlayer(playerId);
+            return Ok(seasons);
+        }
     }
 }

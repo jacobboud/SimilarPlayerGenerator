@@ -1,11 +1,14 @@
-using Microsoft.AspNetCore.Routing; // ?? Required for RouteOptions
-using NBASimilarPlayerGenerator.Models;
+// Program.cs
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NBASimilarPlayerGenerator.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers(); // ? Clean - no need for SuppressInferBindingSourcesForParameters
+builder.Services.AddControllers();
 
 // Swagger/OpenAPI support
 builder.Services.AddEndpointsApiExplorer();
@@ -20,15 +23,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "http://localhost:3000", // local dev
-            "https://polite-mud-0ca1bbf1e.6.azurestaticapps.net" // deployed frontend
-        )
-        .AllowAnyHeader()
-        .AllowAnyMethod();
+                "http://localhost:3000", // local dev
+                "https://polite-mud-0ca1bbf1e.6.azurestaticapps.net" // deployed frontend
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
-// ?? Lowercase all routes for consistent frontend URLs
+// Lowercase all routes for consistent frontend URLs
 builder.Services.Configure<RouteOptions>(options =>
 {
     options.LowercaseUrls = true;
@@ -53,7 +56,6 @@ app.Use(async (context, next) =>
     // context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self';");
     await next();
 });
-
 
 // Enable CORS
 app.UseCors("AllowFrontend");
