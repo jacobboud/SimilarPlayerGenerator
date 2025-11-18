@@ -177,9 +177,9 @@ const SEASON_SHOOTING_KEYS = [
   "num_heaves_made",
 ];
 
-const SEASON_ACCOLADES_KEYS = [
-  "CHMP",
-  "FMVP",
+const SEASON_CHAMPIONSHIPS_KEYS = ["CHMP", "FMVP"];
+
+const SEASON_ALL_LEAGUE_TEAMS_KEYS = [
   "all_star",
   "all_defense_share",
   "all_nba_share",
@@ -194,6 +194,9 @@ const SEASON_ACCOLADES_KEYS = [
   "all_rookie_1st",
   "all_rookie_2nd",
   "all_rookie_ORV",
+];
+
+const SEASON_INDIVIDUAL_AWARDS_KEYS = [
   "mvp_winner",
   "mvp_share",
   "roy_winner",
@@ -347,9 +350,9 @@ const CAREER_SHOOTING_KEYS = [
   "career_num_heaves_made",
 ];
 
-const CAREER_ACCOLADES_KEYS = [
-  "career_CHMP_count",
-  "career_FMVP_count",
+const CAREER_CHAMPIONSHIPS_KEYS = ["career_CHMP_count", "career_FMVP_count"];
+
+const CAREER_ALL_LEAGUE_TEAMS_KEYS = [
   "career_all_star_count",
   "career_all_defense_share_mean",
   "career_all_nba_share_mean",
@@ -364,6 +367,9 @@ const CAREER_ACCOLADES_KEYS = [
   "career_all_rookie_1st_count",
   "career_all_rookie_2nd_count",
   "career_all_rookie_ORV_count",
+];
+
+const CAREER_INDIVIDUAL_AWARDS_KEYS = [
   "career_mvp_winner_count",
   "career_mvp_share_mean",
   "career_roy_winner_count",
@@ -383,7 +389,7 @@ type StatGroupConfig = {
   label: string;
   seasonKeys: string[];
   careerKeys: string[];
-  alwaysShow?: boolean; // Per Game always shown; others only when "Show advanced" = true
+  alwaysShow?: boolean; // Per Game always shown; others only when "Show move" = true
 };
 
 const STAT_GROUP_CONFIG: StatGroupConfig[] = [
@@ -419,9 +425,19 @@ const STAT_GROUP_CONFIG: StatGroupConfig[] = [
     careerKeys: CAREER_SHOOTING_KEYS,
   },
   {
-    label: "Accolades",
-    seasonKeys: SEASON_ACCOLADES_KEYS,
-    careerKeys: CAREER_ACCOLADES_KEYS,
+    label: "Championships",
+    seasonKeys: SEASON_CHAMPIONSHIPS_KEYS,
+    careerKeys: CAREER_CHAMPIONSHIPS_KEYS,
+  },
+  {
+    label: "All-League Teams",
+    seasonKeys: SEASON_ALL_LEAGUE_TEAMS_KEYS,
+    careerKeys: CAREER_ALL_LEAGUE_TEAMS_KEYS,
+  },
+  {
+    label: "Individual Awards",
+    seasonKeys: SEASON_INDIVIDUAL_AWARDS_KEYS,
+    careerKeys: CAREER_INDIVIDUAL_AWARDS_KEYS,
   },
 ];
 
@@ -448,7 +464,8 @@ export default function SimilarPlayerGenerator() {
   // New: groups + topN for recommendations
   const [groupsPreset, setGroupsPreset] = useState<GroupsPreset>("stats");
   const [customGroups, setCustomGroups] = useState<GroupName[]>([]);
-  const [topN, setTopN] = useState(5);
+  // Store what the user typed as a string; default "10"
+  const [topNInput, setTopNInput] = useState("10");
 
   // ---- Group helpers (for backend presets/custom) ----
 
@@ -496,7 +513,7 @@ export default function SimilarPlayerGenerator() {
     }
   };
 
-  const buildRecommendationParams = () => {
+  const buildRecommendationParams = (topN: number) => {
     const params = new URLSearchParams();
     params.set("topN", String(topN));
 
@@ -555,7 +572,18 @@ export default function SimilarPlayerGenerator() {
     if (!selectedPlayer) return;
     setRecommendations([]);
 
-    const params = buildRecommendationParams();
+    // Parse the input; default to 10 if blank/invalid
+    let parsed = parseInt(topNInput, 10);
+    if (Number.isNaN(parsed)) {
+      parsed = 10;
+    }
+    // Clamp to [1, 50]
+    parsed = Math.max(1, Math.min(50, parsed));
+
+    // Keep the UI in sync with the clamped value
+    setTopNInput(String(parsed));
+
+    const params = buildRecommendationParams(parsed);
 
     // Only use season-based comparisons when:
     //  - the Season tab is active, AND
@@ -685,6 +713,12 @@ export default function SimilarPlayerGenerator() {
     setRecStatsShown({});
     setRecAdvancedShown({});
   }, [statsTab, selectedSeason]);
+
+  useEffect(() => {
+    // When switching between Career and Season tabs,
+    // reset the "Show More Stats" toggle for the selected player panel
+    setShowAdvanced(false);
+  }, [statsTab]);
 
   // ---- Render ----
 
@@ -897,9 +931,7 @@ export default function SimilarPlayerGenerator() {
                       borderRadius: "4px",
                     }}
                   >
-                    {showAdvanced
-                      ? "Hide Advanced Groups"
-                      : "Show Advanced Groups"}
+                    {showAdvanced ? "Hide More Stats" : "Show More Stats"}
                   </button>
                 </div>
               </>
@@ -940,7 +972,7 @@ export default function SimilarPlayerGenerator() {
                   checked={groupsPreset === "stats"}
                   onChange={() => setGroupsPreset("stats")}
                 />{" "}
-                Stats (default)
+                Stats
               </label>
               <label style={{ marginRight: "12px" }}>
                 <input
@@ -1049,19 +1081,16 @@ export default function SimilarPlayerGenerator() {
             {/* TopN control */}
             <div style={{ marginTop: "10px" }}>
               <label>
-                Top N similar players:{" "}
+                Top{" "}
                 <input
                   type="number"
                   min={1}
                   max={50}
-                  value={topN}
-                  onChange={(e) =>
-                    setTopN(
-                      Math.max(1, Math.min(50, Number(e.target.value) || 1))
-                    )
-                  }
+                  value={topNInput}
+                  onChange={(e) => setTopNInput(e.target.value)}
                   style={{ width: "60px", marginLeft: "4px" }}
-                />
+                />{" "}
+                similar players:
               </label>
             </div>
           </div>
@@ -1073,7 +1102,7 @@ export default function SimilarPlayerGenerator() {
 
           <div style={{ marginBottom: "10px", color: "#555" }}>
             {isSeasonComparison
-              ? `Currently comparing SEASONS (season ${selectedSeason}).`
+              ? `Currently comparing SEASONS. Choose the Career tab if you want career-based comparisons.`
               : "Currently comparing CAREERS. Choose the Season tab and pick a season if you want season-based comparisons."}
           </div>
 
@@ -1236,9 +1265,7 @@ export default function SimilarPlayerGenerator() {
                             borderRadius: "4px",
                           }}
                         >
-                          {isAdv
-                            ? "Hide Advanced Groups"
-                            : "Show Advanced Groups"}
+                          {isAdv ? "Hide More Stats" : "Show More Stats"}
                         </button>
                       </div>
                     </div>
