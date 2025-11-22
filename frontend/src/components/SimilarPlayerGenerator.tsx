@@ -449,23 +449,24 @@ export default function SimilarPlayerGenerator() {
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [usedSeason, setUsedSeason] = useState<number | null>(null);
   const [recommendations, setRecommendations] = useState<Player[]>([]);
-
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [recStatsShown, setRecStatsShown] = useState<Record<string, boolean>>(
     {}
   );
-  const [recAdvancedShown, setRecAdvancedShown] = useState<
-    Record<string, boolean>
-  >({});
 
-  // New: which tab is active in the stats panel
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Which tab is active in the stats panel (still used for the *selected* player)
   const [statsTab, setStatsTab] = useState<"career" | "season">("career");
 
-  // New: groups + topN for recommendations
+  // Groups + topN for recommendations
   const [groupsPreset, setGroupsPreset] = useState<GroupsPreset>("stats");
   const [customGroups, setCustomGroups] = useState<GroupName[]>([]);
-  // Store what the user typed as a string; default "10"
   const [topNInput, setTopNInput] = useState("10");
+
+  // NEW: which groups were actually used in the last recommendation request
+  const [usedGroupsForLastRequest, setUsedGroupsForLastRequest] = useState<
+    GroupName[] | null
+  >(null);
 
   // ---- Group helpers (for backend presets/custom) ----
 
@@ -571,6 +572,7 @@ export default function SimilarPlayerGenerator() {
   const generateRecommendations = async () => {
     if (!selectedPlayer) return;
     setRecommendations([]);
+    setRecStatsShown({});
 
     // Parse the input; default to 10 if blank/invalid
     let parsed = parseInt(topNInput, 10);
@@ -585,9 +587,29 @@ export default function SimilarPlayerGenerator() {
 
     const params = buildRecommendationParams(parsed);
 
+    // Figure out which groups are actually being compared,
+    // so we can limit the visible stat groups for the results to just those.
+    let effectiveGroups: GroupName[] | null = null;
+
+    if (groupsPreset === "custom") {
+      if (customGroups.length > 0) {
+        // Custom selection: use exactly those groups
+        effectiveGroups = [...customGroups];
+      } else {
+        // Custom with nothing selected → backend falls back to "stats"
+        effectiveGroups = [...STAT_GROUPS];
+      }
+    } else if (groupsPreset === "stats" || groupsPreset === null) {
+      effectiveGroups = [...STAT_GROUPS];
+    } else if (groupsPreset === "accolades") {
+      effectiveGroups = [...ACCOLADE_GROUPS];
+    } else if (groupsPreset === "all") {
+      effectiveGroups = [...STAT_GROUPS, ...ACCOLADE_GROUPS];
+    }
+
+    setUsedGroupsForLastRequest(effectiveGroups);
+
     // Only use season-based comparisons when:
-    //  - the Season tab is active, AND
-    //  - a season is actually selected
     const useSeason = statsTab === "season" && selectedSeason !== null;
 
     let url: string;
@@ -606,8 +628,6 @@ export default function SimilarPlayerGenerator() {
       const data: Player[] = res.data;
       setRecommendations(data);
       setUsedSeason(useSeason ? selectedSeason : null);
-      setRecStatsShown({});
-      setRecAdvancedShown({});
     } catch (err) {
       console.error("Failed to fetch recommendations:", err);
     }
@@ -706,12 +726,9 @@ export default function SimilarPlayerGenerator() {
   const isSeasonComparison = statsTab === "season" && selectedSeason !== null;
 
   useEffect(() => {
-    // Any time the user changes between career/season
-    // or picks a different season, clear the current results
     setRecommendations([]);
     setUsedSeason(null);
     setRecStatsShown({});
-    setRecAdvancedShown({});
   }, [statsTab, selectedSeason]);
 
   useEffect(() => {
@@ -1149,8 +1166,13 @@ export default function SimilarPlayerGenerator() {
               const key = `${player.playerId}_${
                 player.similarityScore ?? index
               }`;
+
               const isShown = recStatsShown[key] ?? false;
-              const isAdv = recAdvancedShown[key] ?? false;
+
+              const groupsToShow: GroupName[] =
+                usedGroupsForLastRequest && usedGroupsForLastRequest.length > 0
+                  ? usedGroupsForLastRequest
+                  : ([...STAT_GROUPS, ...ACCOLADE_GROUPS] as GroupName[]);
 
               return (
                 <div
@@ -1174,6 +1196,8 @@ export default function SimilarPlayerGenerator() {
                       Similarity: {(player.similarityScore * 100).toFixed(2)}%
                     </div>
                   )}
+
+                  {/* Toggle button for this recommendation’s stats */}
                   <button
                     onClick={() =>
                       setRecStatsShown((prev) => ({
@@ -1193,6 +1217,7 @@ export default function SimilarPlayerGenerator() {
                     {isShown ? "Hide Stats" : "Show Stats"}
                   </button>
 
+                  {/* Only show stats when this card is expanded, and only for the groups being compared */}
                   {isShown && stats && (
                     <div
                       style={{
@@ -1208,8 +1233,10 @@ export default function SimilarPlayerGenerator() {
                       }}
                     >
                       {STAT_GROUP_CONFIG.map((group) => {
-                        // Per Game always visible; other groups only when this card's advanced toggle is on
-                        if (!group.alwaysShow && !isAdv) return null;
+                        // Only render groups that were actually used in similarity
+                        if (!groupsToShow.includes(group.label as GroupName)) {
+                          return null;
+                        }
 
                         const keys =
                           usedSeason != null
@@ -1248,26 +1275,6 @@ export default function SimilarPlayerGenerator() {
                           </div>
                         );
                       })}
-
-                      <div style={{ marginTop: "12px", textAlign: "center" }}>
-                        <button
-                          onClick={() =>
-                            setRecAdvancedShown((prev) => ({
-                              ...prev,
-                              [key]: !prev[key],
-                            }))
-                          }
-                          style={{
-                            padding: "6px 14px",
-                            backgroundColor: "#6c757d",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          {isAdv ? "Hide More Stats" : "Show More Stats"}
-                        </button>
-                      </div>
                     </div>
                   )}
                 </div>
