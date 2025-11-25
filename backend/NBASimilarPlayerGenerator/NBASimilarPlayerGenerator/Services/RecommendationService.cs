@@ -146,6 +146,29 @@ namespace NBASimilarPlayerGenerator.Services
             return dict;
         }
 
+        // At class level in RecommendationService
+        private static readonly Dictionary<string, int> GROUP_START_YEAR = new()
+        {
+            // Started in 1947
+            ["Career Info"] = 1947,
+            ["Season Info"] = 1947,
+            ["Per Game"] = 1947,
+            ["Totals"] = 1947,
+            ["Advanced"] = 1947,
+            ["Championships"] = 1947,
+            ["All-League Teams"] = 1947,
+
+            // Started in 1948
+            ["Individual Awards"] = 1948,
+
+            // Started in 1974
+            ["Per 100"] = 1974,
+
+            // Started in 1997
+            ["Play by Play"] = 1997,
+            ["Shooting"] = 1997
+        };
+
         private Dictionary<string, int> GetSeasonTargetNonNullCounts(
     string playerId,
     int season,
@@ -441,52 +464,6 @@ namespace NBASimilarPlayerGenerator.Services
 
         // ---------- Filtering / Validation Helpers ----------
 
-        private void ValidateSeasonTargetHasGroups(
-            string playerId,
-            int season,
-            Dictionary<string, List<string>> featureGroups,
-            List<string> selectedGroups)
-        {
-            var targetRowDyn = _seasonRows.FirstOrDefault(r =>
-            {
-                var row = (IDictionary<string, object?>)r;
-                var pid = row["player_id"]?.ToString()?.Trim();
-                var seasonStr = row["season"]?.ToString();
-                return pid == playerId && seasonStr == season.ToString();
-            });
-
-            if (targetRowDyn is null)
-                throw new InvalidOperationException($"No row found for player_id='{playerId}', season={season} in seasons data.");
-
-            var targetRow = (IDictionary<string, object?>)targetRowDyn;
-
-            foreach (var g in selectedGroups)
-            {
-                if (!featureGroups.TryGetValue(g, out var groupCols))
-                    throw new ArgumentException($"Unknown group: {g}");
-
-                bool hasAny = false;
-
-                foreach (var col in groupCols)
-                {
-                    if (!targetRow.ContainsKey(col)) continue;
-                    if (TryGetNumericOrBool(targetRow[col], out _))
-                    {
-                        hasAny = true;
-                        break;
-                    }
-                }
-
-                if (!hasAny)
-                {
-                    throw new InvalidOperationException(
-                        $"Player id {playerId} in season {season} has no stats in group '{g}'. " +
-                        "Remove that group or choose a different player."
-                    );
-                }
-            }
-        }
-
         private IEnumerable<dynamic> FilterSeasonRowsByGroups(
     Dictionary<string, List<string>> featureGroups,
     List<string> selectedGroups,
@@ -533,50 +510,6 @@ namespace NBASimilarPlayerGenerator.Services
 
                 if (keep)
                     yield return rowDyn;
-            }
-        }
-
-        private void ValidateCareerTargetHasGroups(
-            string playerId,
-            Dictionary<string, List<string>> featureGroups,
-            List<string> selectedGroups)
-        {
-            var targetRowDyn = _careerRows.FirstOrDefault(r =>
-            {
-                var row = (IDictionary<string, object?>)r;
-                var pid = row["player_id"]?.ToString()?.Trim();
-                return pid == playerId;
-            });
-
-            if (targetRowDyn is null)
-                throw new InvalidOperationException($"player_id='{playerId}' not found in careers data.");
-
-            var targetRow = (IDictionary<string, object?>)targetRowDyn;
-
-            foreach (var g in selectedGroups)
-            {
-                if (!featureGroups.TryGetValue(g, out var groupCols))
-                    throw new ArgumentException($"Unknown group: {g}");
-
-                bool hasAny = false;
-
-                foreach (var col in groupCols)
-                {
-                    if (!targetRow.ContainsKey(col)) continue;
-                    if (TryGetNumericOrBool(targetRow[col], out _))
-                    {
-                        hasAny = true;
-                        break;
-                    }
-                }
-
-                if (!hasAny)
-                {
-                    throw new InvalidOperationException(
-                        $"Player id {playerId} has no stats in group '{g}'. " +
-                        "Remove that group or choose a different player."
-                    );
-                }
             }
         }
 
@@ -713,45 +646,83 @@ namespace NBASimilarPlayerGenerator.Services
 
         // ---------- Public API: Season Recommendations ----------
 
-        public List<PlayerDto> GetSeasonRecommendations(
+        public RecommendationResult GetSeasonRecommendations(
     string playerId,
     int season,
     RecommendationOptions options)
         {
             var fg = _seasonFeatureGroups;
+            var result = new RecommendationResult();
 
             bool presetMode = options.Groups == null || !options.Groups.Any();
             List<string> groupNames;
 
             if (presetMode)
             {
-                // Use preset ("stats"/"all"/"accolades") then prune groups the player lacks
+                // Use preset ("stats"/"all"/"accolades")
                 groupNames = ResolveGroups(options, fg);
-                groupNames = PruneGroupsForSeasonTarget(playerId, season, fg, groupNames);
-
-                if (!groupNames.Any())
-                {
-                    throw new InvalidOperationException(
-                        $"Player id {playerId} in season {season} has no stats in any of the preset-selected groups.");
-                }
             }
             else
             {
-                // Explicit list: strict mode (error if they lack a group)
+                // Custom selection; no throwing, we’ll adjust via warnings + dropping
                 groupNames = options.Groups!;
-                ValidateSeasonTargetHasGroups(playerId, season, fg, groupNames);
             }
 
-            // Compute how many stats the TARGET has in each group
-            var targetNonNullCounts = GetSeasonTargetNonNullCounts(playerId, season, fg, groupNames);
+            // Compute how many stats the TARGET has in each requested group
+            var targetCountsAll = GetSeasonTargetNonNullCounts(playerId, season, fg, groupNames);
+
+            var effectiveGroups = new List<string>();
+            var droppedGroups = new List<string>();
+            var playerName = _players.TryGetValue(playerId, out var p) ? p.Name : playerId;
+
+            foreach (var g in groupNames)
+            {
+                targetCountsAll.TryGetValue(g, out var count);
+                GROUP_START_YEAR.TryGetValue(g, out var startYear);
+
+                // 1) Season before the stat existed → ignore, explain
+                if (startYear > 0 && season < startYear)
+                {
+                    result.Warnings.Add(
+                        $"{playerName}'s {season} season occurred before {g} stats started being tracked in {startYear}. Ignoring {g} for this comparison."
+                    );
+                    droppedGroups.Add(g);
+                    continue;
+                }
+
+                // 2) No usable stats for this group in this season → ignore, explain
+                if (count <= 0)
+                {
+                    result.Warnings.Add(
+                        $"{playerName} has no stats recorded in group '{g}' for season {season}. Ignoring {g} for this comparison."
+                    );
+                    droppedGroups.Add(g);
+                    continue;
+                }
+
+                // otherwise we can use this group
+                effectiveGroups.Add(g);
+            }
+
+            if (!effectiveGroups.Any())
+            {
+                // No groups left → no similarity possible, but we still return nicely
+                result.Warnings.Add(
+                    $"No usable stat groups remain for {playerName} in season {season} after dropping unsupported groups, so no similar players can be generated."
+                );
+                return result;
+            }
+
+            // Recompute counts but only for the effective groups, since the filter uses them
+            var targetNonNullCounts = GetSeasonTargetNonNullCounts(playerId, season, fg, effectiveGroups);
 
             // Filter season rows: they must have at least half as many non-null stats
-            // in each group as the target player.
-            var filteredRows = FilterSeasonRowsByGroups(fg, groupNames, targetNonNullCounts);
+            // in each effective group as the target player.
+            var filteredRows = FilterSeasonRowsByGroups(fg, effectiveGroups, targetNonNullCounts);
             var rowList = filteredRows.ToList();
 
             // Build matrix [rowIndex, colIndex] for feature values
-            var featureCols = GetFeatureColumns(fg, groupNames);
+            var featureCols = GetFeatureColumns(fg, effectiveGroups);
 
             int rows = rowList.Count;
             int cols = featureCols.Count;
@@ -791,7 +762,10 @@ namespace NBASimilarPlayerGenerator.Services
             var targetKey = $"{playerId}_{season}";
             var targetIndex = idList.IndexOf(targetKey);
             if (targetIndex < 0)
-                throw new InvalidOperationException("Target season missing after filtering.");
+            {
+                result.Warnings.Add("Target season missing after filtering; no recommendations returned.");
+                return result;
+            }
 
             // similarity to all
             var sims = new List<(string Key, double Score)>();
@@ -819,8 +793,6 @@ namespace NBASimilarPlayerGenerator.Services
                 .Take(options.TopN)
                 .ToList();
 
-            // Map to PlayerDto results
-            var results = new List<PlayerDto>();
             foreach (var (key, score) in top)
             {
                 var parts = key.Split('_');
@@ -833,27 +805,31 @@ namespace NBASimilarPlayerGenerator.Services
                 var seasonLabel = $"{pid}_{yr}";
                 _seasonStats.TryGetValue(seasonLabel, out var seasonStats);
 
-                results.Add(new PlayerDto
+                result.Players.Add(new PlayerDto
                 {
                     PlayerId = pid,
                     Name = basePlayer.Name,
                     Years = yr.ToString(), // for season mode
-                    Teams = new List<string> { basePlayer.Seasons?.FirstOrDefault(s => s.Year == yr)?.Team ?? "" },
+                    Teams = new List<string>
+            {
+                basePlayer.Seasons?.FirstOrDefault(s => s.Year == yr)?.Team ?? ""
+            },
                     SeasonStats = seasonStats,
                     SimilarityScore = score
                 });
             }
 
-            return results;
+            return result;
         }
 
         // ---------- Public API: Career Recommendations ----------
 
-        public List<PlayerDto> GetCareerRecommendations(
-            string playerId,
-            RecommendationOptions options)
+        public RecommendationResult GetCareerRecommendations(
+    string playerId,
+    RecommendationOptions options)
         {
             var fg = _careerFeatureGroups;
+            var result = new RecommendationResult();
 
             bool presetMode = options.Groups == null || !options.Groups.Any();
             List<string> groupNames;
@@ -861,32 +837,87 @@ namespace NBASimilarPlayerGenerator.Services
             if (presetMode)
             {
                 groupNames = ResolveGroups(options, fg);
-                groupNames = PruneGroupsForCareerTarget(playerId, fg, groupNames);
-
-                if (!groupNames.Any())
-                {
-                    throw new InvalidOperationException(
-                        $"Player id {playerId} has no stats in any of the preset-selected groups.");
-                }
+                // keep initial set; now we’ll adjust rather than throw
             }
             else
             {
                 groupNames = options.Groups!;
-                ValidateCareerTargetHasGroups(playerId, fg, groupNames);
+                // no more ValidateCareerTargetHasGroups throwing
+                // we’ll handle missing groups via warnings and dropping
             }
 
-            // Filter careers by group availability
-            var targetNonNullCounts = GetCareerTargetNonNullCounts(playerId, fg, groupNames);
-            var filteredRows = FilterCareerRowsByGroups(fg, groupNames, targetNonNullCounts);
+            // Count non-null stats the target has in each group
+            var targetCounts = GetCareerTargetNonNullCounts(playerId, fg, groupNames);
+
+            // Determine which groups we can actually use, and build warnings
+            var effectiveGroups = new List<string>();
+            var playerName = _players.TryGetValue(playerId, out var p) ? p.Name : playerId;
+            (int From, int To) span;
+            _spanById.TryGetValue(playerId, out span); // span.From / span.To may be 0 if missing
+
+            var droppedGroups = new List<string>();
+
+            foreach (var g in groupNames)
+            {
+                targetCounts.TryGetValue(g, out var count);
+                GROUP_START_YEAR.TryGetValue(g, out var startYear);
+
+                // If we know the tracking start year and the span:
+                if (startYear > 0 && span.To > 0)
+                {
+                    // 1) Entire career before the stat existed → ignore, explain
+                    if (span.To < startYear)
+                    {
+                        result.Warnings.Add(
+                            $"{playerName} ended his career before {g} stats started being tracked in {startYear}. Ignoring {g} for this comparison."
+                        );
+                        droppedGroups.Add(g);
+                        continue;
+                    }
+
+                    // 2) Career straddles the start year → warn but we may still use group
+                    if (span.From < startYear && span.To >= startYear)
+                    {
+                        result.Warnings.Add(
+                            $"{playerName} played some seasons before {g} stats started being tracked in {startYear}, so those early seasons aren't accounted for in this stat group."
+                        );
+                    }
+                }
+
+                // 3) If the player has zero usable stats in this group at all, drop it
+                if (count <= 0)
+                {
+                    result.Warnings.Add(
+                        $"{playerName} has no stats recorded in group '{g}'. Ignoring {g} for this comparison."
+                    );
+                    droppedGroups.Add(g);
+                    continue;
+                }
+
+                // otherwise we can use this group
+                effectiveGroups.Add(g);
+            }
+
+            if (!effectiveGroups.Any())
+            {
+                // No groups left → no similarity possible, but we still return nicely
+                result.Warnings.Add(
+                    $"No usable stat groups remain for {playerName} after dropping unsupported groups, so no similar players can be generated."
+                );
+                return result;
+            }
+
+            // -------- Now run your existing pipeline using effectiveGroups instead of groupNames --------
+
+            var filteredRows = FilterCareerRowsByGroups(fg, effectiveGroups, GetCareerTargetNonNullCounts(playerId, fg, effectiveGroups));
             var rowList = filteredRows.ToList();
 
-            // Build matrix
-            var featureCols = GetFeatureColumns(fg, groupNames);
+            var featureCols = GetFeatureColumns(fg, effectiveGroups);
             int rows = rowList.Count;
             int cols = featureCols.Count;
 
             var matrix = new double?[rows, cols];
-            var idList = new List<string>(rows); // just playerId
+            var idList = new List<string>(rows);
 
             for (int i = 0; i < rows; i++)
             {
@@ -912,12 +943,14 @@ namespace NBASimilarPlayerGenerator.Services
             }
 
             var scaled = StandardizeMatrix(matrix);
-
             var targetIndex = idList.IndexOf(playerId);
             if (targetIndex < 0)
-                throw new InvalidOperationException("Target career missing after filtering.");
+            {
+                // Should be extremely rare; fail gracefully.
+                result.Warnings.Add("Target career missing after filtering; no recommendations returned.");
+                return result;
+            }
 
-            // similarity-to-all
             var sims = new List<(string Id, double Score)>();
             var targetVec = Enumerable.Range(0, cols).Select(c => scaled[targetIndex, c]).ToList();
 
@@ -939,8 +972,6 @@ namespace NBASimilarPlayerGenerator.Services
                 .Take(options.TopN)
                 .ToList();
 
-            // Map to PlayerDto results
-            var results = new List<PlayerDto>();
             foreach (var (pid, score) in top)
             {
                 if (!_players.TryGetValue(pid, out var basePlayer))
@@ -948,7 +979,7 @@ namespace NBASimilarPlayerGenerator.Services
 
                 _careerStats.TryGetValue(pid, out var cstats);
 
-                results.Add(new PlayerDto
+                result.Players.Add(new PlayerDto
                 {
                     PlayerId = pid,
                     Name = basePlayer.Name,
@@ -959,7 +990,7 @@ namespace NBASimilarPlayerGenerator.Services
                 });
             }
 
-            return results;
+            return result;
         }
 
         // ---------- Public API: Search / Seasons ----------
@@ -1002,109 +1033,6 @@ namespace NBASimilarPlayerGenerator.Services
             }
 
             return false;
-        }
-
-        private List<string> PruneGroupsForSeasonTarget(
-    string playerId,
-    int season,
-    Dictionary<string, List<string>> featureGroups,
-    List<string> groupNames)
-        {
-            var targetRowDyn = _seasonRows.FirstOrDefault(r =>
-            {
-                var row = (IDictionary<string, object?>)r;
-                var pid = row["player_id"]?.ToString()?.Trim();
-                var seasonStr = row["season"]?.ToString();
-                return pid == playerId && seasonStr == season.ToString();
-            });
-
-            if (targetRowDyn is null)
-                throw new InvalidOperationException($"No row found for player_id='{playerId}', season={season} in seasons data.");
-
-            var targetRow = (IDictionary<string, object?>)targetRowDyn;
-
-            var kept = new List<string>();
-
-            foreach (var g in groupNames)
-            {
-                if (!featureGroups.TryGetValue(g, out var groupCols))
-                    continue; // should not happen for presets, but be defensive
-
-                bool hasAny = false;
-
-                foreach (var col in groupCols)
-                {
-                    if (!targetRow.ContainsKey(col)) continue;
-                    if (TryGetNumericOrBool(targetRow[col], out _))
-                    {
-                        hasAny = true;
-                        break;
-                    }
-                }
-
-                if (hasAny)
-                {
-                    kept.Add(g);
-                }
-                else
-                {
-                    // Optional: log dropped groups if you want
-                    Console.WriteLine(
-                        $"Note: player_id='{playerId}' season={season} has no stats in group '{g}', dropping it from preset.");
-                }
-            }
-
-            return kept;
-        }
-
-        private List<string> PruneGroupsForCareerTarget(
-            string playerId,
-            Dictionary<string, List<string>> featureGroups,
-            List<string> groupNames)
-        {
-            var targetRowDyn = _careerRows.FirstOrDefault(r =>
-            {
-                var row = (IDictionary<string, object?>)r;
-                var pid = row["player_id"]?.ToString()?.Trim();
-                return pid == playerId;
-            });
-
-            if (targetRowDyn is null)
-                throw new InvalidOperationException($"player_id='{playerId}' not found in careers data.");
-
-            var targetRow = (IDictionary<string, object?>)targetRowDyn;
-
-            var kept = new List<string>();
-
-            foreach (var g in groupNames)
-            {
-                if (!featureGroups.TryGetValue(g, out var groupCols))
-                    continue;
-
-                bool hasAny = false;
-
-                foreach (var col in groupCols)
-                {
-                    if (!targetRow.ContainsKey(col)) continue;
-                    if (TryGetNumericOrBool(targetRow[col], out _))
-                    {
-                        hasAny = true;
-                        break;
-                    }
-                }
-
-                if (hasAny)
-                {
-                    kept.Add(g);
-                }
-                else
-                {
-                    Console.WriteLine(
-                        $"Note: player_id='{playerId}' has no stats in group '{g}', dropping it from preset.");
-                }
-            }
-
-            return kept;
         }
 
     }

@@ -13,13 +13,13 @@ namespace NBASimilarPlayerGenerator.Services
         List<int> GetSeasonsForPlayer(string playerId);
 
         // Season-based similarity by id + season
-        List<PlayerDto> GetSeasonRecommendations(
+        RecommendationResult GetSeasonRecommendations(
             string playerId,
             int season,
             RecommendationOptions options);
 
         // Career-based similarity by id
-        List<PlayerDto> GetCareerRecommendations(
+        RecommendationResult GetCareerRecommendations(
             string playerId,
             RecommendationOptions options);
     }

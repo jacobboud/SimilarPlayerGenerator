@@ -502,7 +502,7 @@ export const STAT_LABELS: Record<string, string> = {
   FMVP: "FMVP",
   all_star: "AS",
   all_defense_share: "DEF_S",
-  all_nba_share: "NBA_s",
+  all_nba_share: "NBA_S",
   all_rookie_share: "ROOK_S",
   all_defense_1st: "DEF_1",
   all_defense_2nd: "DEF_2",
@@ -645,7 +645,7 @@ export const STAT_LABELS: Record<string, string> = {
   // ---------- Career all-league teams ----------
   career_all_star_count: "AS",
   career_all_defense_share_mean: "DEF_S",
-  career_all_nba_share_mean: "NBA_s",
+  career_all_nba_share_mean: "NBA_S",
   career_all_rookie_share_mean: "ROOK_S",
   career_all_defense_1st_count: "DEF_1",
   career_all_defense_2nd_count: "DEF_2",

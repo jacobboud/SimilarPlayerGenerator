@@ -12,3 +12,8 @@ export interface Player {
   }[];
   similarityScore?: number;
 }
+
+export interface RecommendationResult {
+  players: Player[];
+  warnings: string[];
+}

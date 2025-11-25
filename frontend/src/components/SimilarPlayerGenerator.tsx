@@ -8,7 +8,7 @@ import {
   STAT_LABELS,
   STAT_GROUP_CONFIG,
 } from "../statsConfig";
-import { Player } from "../types";
+import { Player, RecommendationResult } from "../types";
 
 export default function SimilarPlayerGenerator() {
   const [query, setQuery] = useState("");
@@ -21,6 +21,7 @@ export default function SimilarPlayerGenerator() {
   const [recStatsShown, setRecStatsShown] = useState<Record<string, boolean>>(
     {}
   );
+  const [warnings, setWarnings] = useState<string[]>([]);
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -32,7 +33,7 @@ export default function SimilarPlayerGenerator() {
   const [customGroups, setCustomGroups] = useState<GroupName[]>([]);
   const [topNInput, setTopNInput] = useState("10");
 
-  // NEW: which groups were actually used in the last recommendation request
+  // Which groups were actually requested the last time
   const [usedGroupsForLastRequest, setUsedGroupsForLastRequest] = useState<
     GroupName[] | null
   >(null);
@@ -115,6 +116,7 @@ export default function SimilarPlayerGenerator() {
       setUsedSeason(null);
       setShowAdvanced(false);
       setStatsTab("career");
+      setWarnings([]);
     } catch (err) {
       console.error("Search failed:", err);
     }
@@ -133,6 +135,7 @@ export default function SimilarPlayerGenerator() {
       setUsedSeason(null);
       setShowAdvanced(false);
       setStatsTab("career");
+      setWarnings([]);
     } catch (err) {
       console.error("Season fetch failed:", err);
     }
@@ -142,6 +145,7 @@ export default function SimilarPlayerGenerator() {
     if (!selectedPlayer) return;
     setRecommendations([]);
     setRecStatsShown({});
+    setWarnings([]);
 
     // Parse the input; default to 10 if blank/invalid
     let parsed = parseInt(topNInput, 10);
@@ -156,13 +160,12 @@ export default function SimilarPlayerGenerator() {
 
     const params = buildRecommendationParams(parsed);
 
-    // Figure out which groups are actually being compared,
-    // so we can limit the visible stat groups for the results to just those.
+    // Figure out which groups we *requested*,
+    // so we can limit visible stat groups for recs.
     let effectiveGroups: GroupName[] | null = null;
 
     if (groupsPreset === "custom") {
       if (customGroups.length > 0) {
-        // Custom selection: use exactly those groups
         effectiveGroups = [...customGroups];
       } else {
         // Custom with nothing selected → backend falls back to "stats"
@@ -178,7 +181,6 @@ export default function SimilarPlayerGenerator() {
 
     setUsedGroupsForLastRequest(effectiveGroups);
 
-    // Only use season-based comparisons when:
     const useSeason = statsTab === "season" && selectedSeason !== null;
 
     let url: string;
@@ -193,19 +195,20 @@ export default function SimilarPlayerGenerator() {
     }
 
     try {
-      const res = await axios.get(url);
-      const data: Player[] = res.data;
-      setRecommendations(data);
+      const res = await axios.get<RecommendationResult>(url);
+      const data = res.data;
+      setRecommendations(data.players ?? []);
+      setWarnings(data.warnings ?? []);
       setUsedSeason(useSeason ? selectedSeason : null);
     } catch (err) {
       console.error("Failed to fetch recommendations:", err);
+      setWarnings(["Something went wrong fetching recommendations."]);
     }
   };
 
   const getSelectedPlayerTeam = () => {
     if (!selectedPlayer) return "";
 
-    // For the SELECTED player header, follow the current tab + season selection
     const displaySeason =
       statsTab === "season" && selectedSeason !== null ? selectedSeason : null;
 
@@ -221,7 +224,7 @@ export default function SimilarPlayerGenerator() {
     return season?.team ?? selectedPlayer.teams?.join(", ") ?? "";
   };
 
-  // NEW: stats source respects the statsTab (career vs season).
+  // Stats source respects the statsTab (career vs season).
   const getSelectedPlayerStats = () => {
     if (!selectedPlayer) return null;
 
@@ -301,6 +304,7 @@ export default function SimilarPlayerGenerator() {
     setRecommendations([]);
     setUsedSeason(null);
     setRecStatsShown({});
+    setWarnings([]);
   }, [statsTab, selectedSeason]);
 
   useEffect(() => {
@@ -439,7 +443,6 @@ export default function SimilarPlayerGenerator() {
               <button
                 onClick={() => {
                   setStatsTab("career");
-                  // Optional: clear the selected season so the UI reflects that
                   setSelectedSeason(null);
                 }}
                 style={{
@@ -684,7 +687,7 @@ export default function SimilarPlayerGenerator() {
             </div>
           </div>
 
-          {/* Step 3: Generate recommendations (career vs season still uses selectedSeason) */}
+          {/* Step 3: Generate recommendations */}
           <h2 style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
             Step 3: Generate Similar Players
           </h2>
@@ -710,158 +713,190 @@ export default function SimilarPlayerGenerator() {
         </div>
       )}
 
-      {/* Recommendations (unchanged layout, still basic vs advanced toggle) */}
-      {recommendations.length > 0 && (
+      {/* Warnings + Recommendations */}
+      {(warnings.length > 0 || recommendations.length > 0) && (
         <div style={{ marginTop: "40px" }}>
-          <h2 style={{ fontSize: "1.2rem", marginBottom: "15px" }}>
-            Similar Players
-          </h2>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-              alignItems: "center",
-            }}
-          >
-            {recommendations.map((player, index) => {
-              const mode: "career" | "season" =
-                usedSeason != null ? "season" : "career";
-              const stats =
-                mode === "season" ? player.seasonStats : player.careerStats;
+          {warnings.length > 0 && (
+            <div
+              style={{
+                maxWidth: "700px",
+                margin: "0 auto 20px",
+                padding: "12px 16px",
+                borderRadius: "6px",
+                border: "1px solid #f59e0b",
+                backgroundColor: "#fffbeb",
+                color: "#92400e",
+                textAlign: "left",
+                fontSize: "0.95rem",
+              }}
+            >
+              <strong>Notes about this comparison:</strong>
+              <ul style={{ marginTop: "8px", paddingLeft: "20px" }}>
+                {warnings.map((w, idx) => (
+                  <li key={idx}>{w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-              const team =
-                mode === "season"
-                  ? player.teams?.[0] ?? ""
-                  : player.teams?.join(", ");
+          {recommendations.length > 0 && (
+            <>
+              <h2 style={{ fontSize: "1.2rem", marginBottom: "15px" }}>
+                Similar Players
+              </h2>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  alignItems: "center",
+                }}
+              >
+                {recommendations.map((player, index) => {
+                  const mode: "career" | "season" =
+                    usedSeason != null ? "season" : "career";
+                  const stats =
+                    mode === "season" ? player.seasonStats : player.careerStats;
 
-              const key = `${player.playerId}_${
-                player.similarityScore ?? index
-              }`;
+                  const team =
+                    mode === "season"
+                      ? player.teams?.[0] ?? ""
+                      : player.teams?.join(", ");
 
-              const isShown = recStatsShown[key] ?? false;
+                  const key = `${player.playerId}_${
+                    player.similarityScore ?? index
+                  }`;
 
-              const groupsToShow: GroupName[] =
-                usedGroupsForLastRequest && usedGroupsForLastRequest.length > 0
-                  ? usedGroupsForLastRequest
-                  : ([...STAT_GROUPS, ...ACCOLADE_GROUPS] as GroupName[]);
+                  const isShown = recStatsShown[key] ?? false;
 
-              return (
-                <div
-                  key={key}
-                  style={{
-                    backgroundColor: "white",
-                    border: "1px solid #ccc",
-                    borderRadius: "8px",
-                    padding: "20px",
-                    width: "90vw",
-                    maxWidth: "600px",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  <div>
-                    <strong>{player.name}</strong> ({player.years})
-                  </div>
-                  {team && <div>Team(s): {team}</div>}
-                  {player.similarityScore != null && (
-                    <div>
-                      Similarity:{" "}
-                      {(player.similarityScore * 100)
-                        .toFixed(3)
-                        .replace(/\.?0+$/, "")}
-                      %
-                    </div>
-                  )}
+                  const groupsToShow: GroupName[] =
+                    usedGroupsForLastRequest &&
+                    usedGroupsForLastRequest.length > 0
+                      ? usedGroupsForLastRequest
+                      : ([...STAT_GROUPS, ...ACCOLADE_GROUPS] as GroupName[]);
 
-                  {/* Toggle button for this recommendation’s stats */}
-                  <button
-                    onClick={() =>
-                      setRecStatsShown((prev) => ({
-                        ...prev,
-                        [key]: !prev[key],
-                      }))
-                    }
-                    style={{
-                      marginTop: "6px",
-                      padding: "6px 12px",
-                      backgroundColor: "#28a745",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    {isShown ? "Hide Stats" : "Show Stats"}
-                  </button>
-
-                  {/* Only show stats when this card is expanded, and only for the groups being compared */}
-                  {isShown && stats && (
+                  return (
                     <div
+                      key={key}
                       style={{
-                        maxHeight: "300px",
-                        overflowY: "auto",
-                        backgroundColor: "#ffffff",
+                        backgroundColor: "white",
                         border: "1px solid #ccc",
-                        borderRadius: "4px",
+                        borderRadius: "8px",
                         padding: "20px",
-                        marginTop: "10px",
-                        width: "100%",
-                        textAlign: "left",
+                        width: "90vw",
+                        maxWidth: "600px",
+                        boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
                       }}
                     >
-                      {STAT_GROUP_CONFIG.map((group) => {
-                        // Only render groups that were actually used in similarity
-                        if (!groupsToShow.includes(group.label as GroupName)) {
-                          return null;
+                      <div>
+                        <strong>{player.name}</strong> ({player.years})
+                      </div>
+                      {team && <div>Team(s): {team}</div>}
+                      {player.similarityScore != null && (
+                        <div>
+                          Similarity:{" "}
+                          {(player.similarityScore * 100)
+                            .toFixed(3)
+                            .replace(/\.?0+$/, "")}
+                          %
+                        </div>
+                      )}
+
+                      {/* Toggle button for this recommendation’s stats */}
+                      <button
+                        onClick={() =>
+                          setRecStatsShown((prev) => ({
+                            ...prev,
+                            [key]: !prev[key],
+                          }))
                         }
+                        style={{
+                          marginTop: "6px",
+                          padding: "6px 12px",
+                          backgroundColor: "#28a745",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {isShown ? "Hide Stats" : "Show Stats"}
+                      </button>
 
-                        const keys =
-                          usedSeason != null
-                            ? group.seasonKeys
-                            : group.careerKeys;
+                      {/* Only show stats when this card is expanded, and only for the groups being compared */}
+                      {isShown && stats && (
+                        <div
+                          style={{
+                            maxHeight: "300px",
+                            overflowY: "auto",
+                            backgroundColor: "#ffffff",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px",
+                            padding: "20px",
+                            marginTop: "10px",
+                            width: "100%",
+                            textAlign: "left",
+                          }}
+                        >
+                          {STAT_GROUP_CONFIG.map((group) => {
+                            // Only render groups that were actually requested
+                            if (
+                              !groupsToShow.includes(group.label as GroupName)
+                            ) {
+                              return null;
+                            }
 
-                        const availableKeys = keys.filter((k) => k in stats);
-                        if (availableKeys.length === 0) return null;
+                            const keys =
+                              usedSeason != null
+                                ? group.seasonKeys
+                                : group.careerKeys;
 
-                        return (
-                          <div
-                            key={group.label}
-                            style={{ marginBottom: "12px" }}
-                          >
-                            <h4 style={{ marginBottom: "6px" }}>
-                              {group.label}
-                            </h4>
-                            <div
-                              style={{
-                                display: "grid",
-                                gridTemplateColumns:
-                                  "repeat(auto-fit, minmax(150px, 1fr))",
-                                rowGap: "12px",
-                                columnGap: "24px",
-                              }}
-                            >
-                              {availableKeys.map((k) => {
-                                const label = STAT_LABELS[k] ?? k;
-                                return (
-                                  <div key={k}>
-                                    <strong>{label}:</strong>{" "}
-                                    {Number.isFinite(stats[k])
-                                      ? stats[k]
-                                          .toFixed(3)
-                                          .replace(/\.?0+$/, "")
-                                      : stats[k]}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
+                            const availableKeys = keys.filter(
+                              (k) => k in stats
+                            );
+                            if (availableKeys.length === 0) return null;
+
+                            return (
+                              <div
+                                key={group.label}
+                                style={{ marginBottom: "12px" }}
+                              >
+                                <h4 style={{ marginBottom: "6px" }}>
+                                  {group.label}
+                                </h4>
+                                <div
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns:
+                                      "repeat(auto-fit, minmax(150px, 1fr))",
+                                    rowGap: "12px",
+                                    columnGap: "24px",
+                                  }}
+                                >
+                                  {availableKeys.map((k) => {
+                                    const label = STAT_LABELS[k] ?? k;
+                                    return (
+                                      <div key={k}>
+                                        <strong>{label}:</strong>{" "}
+                                        {Number.isFinite(stats[k])
+                                          ? stats[k]
+                                              .toFixed(3)
+                                              .replace(/\.?0+$/, "")
+                                          : stats[k]}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

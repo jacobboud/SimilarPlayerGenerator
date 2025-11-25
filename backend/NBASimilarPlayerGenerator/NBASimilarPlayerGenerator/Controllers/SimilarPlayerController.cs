@@ -46,8 +46,8 @@ namespace NBASimilarPlayerGenerator.Controllers
                     .ToList()
             };
 
-            var recs = _recommendationService.GetCareerRecommendations(playerId, options);
-            return Ok(recs);
+            var result = _recommendationService.GetCareerRecommendations(playerId, options);
+            return Ok(result);
         }
 
         [HttpGet("season/{playerId}/{season}")]
@@ -70,8 +70,8 @@ namespace NBASimilarPlayerGenerator.Controllers
                     .ToList()
             };
 
-            var recs = _recommendationService.GetSeasonRecommendations(playerId, season, options);
-            return Ok(recs);
+            var result = _recommendationService.GetSeasonRecommendations(playerId, season, options);
+            return Ok(result);
         }
 
         [HttpGet("seasons/{playerId}")]
