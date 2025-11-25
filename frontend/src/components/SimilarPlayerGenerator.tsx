@@ -1,445 +1,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-
-const STAT_GROUPS = [
-  "Per Game",
-  "Totals",
-  "Advanced",
-  "Per 100",
-  "Play by Play",
-  "Shooting",
-] as const;
-
-const ACCOLADE_GROUPS = [
-  "Championships",
-  "All-League Teams",
-  "Individual Awards",
-] as const;
-
-type GroupName =
-  | (typeof STAT_GROUPS)[number]
-  | (typeof ACCOLADE_GROUPS)[number];
-
-type GroupsPreset = "stats" | "accolades" | "all" | "custom" | null;
-
-interface Player {
-  playerId: string;
-  name: string;
-  years: string;
-  teams?: string[];
-  careerStats?: Record<string, number>;
-  seasonStats?: Record<string, number>;
-  seasons?: {
-    year: number;
-    team: string;
-    stats: Record<string, number>;
-  }[];
-  similarityScore?: number;
-}
-
-// ----- Display stat groups for the SELECTED player -----
-// Season columns (from nba_player_seasons.csv)
-const SEASON_PER_GAME_KEYS = [
-  "mp_per_game",
-  "fg_per_game",
-  "fga_per_game",
-  "fg_percent",
-  "x3p_per_game",
-  "x3pa_per_game",
-  "x3p_percent",
-  "x2p_per_game",
-  "x2pa_per_game",
-  "x2p_percent",
-  "e_fg_percent",
-  "ft_per_game",
-  "fta_per_game",
-  "ft_percent",
-  "orb_per_game",
-  "drb_per_game",
-  "trb_per_game",
-  "ast_per_game",
-  "stl_per_game",
-  "blk_per_game",
-  "tov_per_game",
-  "pf_per_game",
-  "pts_per_game",
-];
-
-const SEASON_TOTAL_KEYS = [
-  "g",
-  "gs",
-  "mp",
-  "fg",
-  "fga",
-  "x3p",
-  "x3pa",
-  "x2p",
-  "x2pa",
-  "ft",
-  "fta",
-  "orb",
-  "drb",
-  "trb",
-  "ast",
-  "stl",
-  "blk",
-  "tov",
-  "pf",
-  "pts",
-  "trp_dbl",
-];
-
-const SEASON_ADVANCED_KEYS = [
-  "per",
-  "ts_percent",
-  "x3p_ar",
-  "f_tr",
-  "orb_percent",
-  "drb_percent",
-  "trb_percent",
-  "ast_percent",
-  "stl_percent",
-  "blk_percent",
-  "tov_percent",
-  "usg_percent",
-  "ows",
-  "dws",
-  "ws",
-  "ws_48",
-  "obpm",
-  "dbpm",
-  "bpm",
-  "vorp",
-];
-
-const SEASON_PER_100_KEYS = [
-  "fg_per_100_poss",
-  "fga_per_100_poss",
-  "x3p_per_100_poss",
-  "x3pa_per_100_poss",
-  "x2p_per_100_poss",
-  "x2pa_per_100_poss",
-  "ft_per_100_poss",
-  "fta_per_100_poss",
-  "orb_per_100_poss",
-  "drb_per_100_poss",
-  "trb_per_100_poss",
-  "ast_per_100_poss",
-  "stl_per_100_poss",
-  "blk_per_100_poss",
-  "tov_per_100_poss",
-  "pf_per_100_poss",
-  "pts_per_100_poss",
-  "o_rtg",
-  "d_rtg",
-];
-
-const SEASON_PLAY_BY_PLAY_KEYS = [
-  "pg_percent",
-  "sg_percent",
-  "sf_percent",
-  "pf_percent",
-  "c_percent",
-  "on_court_plus_minus_per_100_poss",
-  "net_plus_minus_per_100_poss",
-  "bad_pass_turnover",
-  "lost_ball_turnover",
-  "shooting_foul_committed",
-  "offensive_foul_committed",
-  "shooting_foul_drawn",
-  "offensive_foul_drawn",
-  "points_generated_by_assists",
-  "and1",
-  "fga_blocked",
-];
-
-const SEASON_SHOOTING_KEYS = [
-  "avg_dist_fga",
-  "percent_fga_from_x2p_range",
-  "percent_fga_from_x0_3_range",
-  "percent_fga_from_x3_10_range",
-  "percent_fga_from_x10_16_range",
-  "percent_fga_from_x16_3p_range",
-  "percent_fga_from_x3p_range",
-  "fg_percent_from_x2p_range",
-  "fg_percent_from_x0_3_range",
-  "fg_percent_from_x3_10_range",
-  "fg_percent_from_x10_16_range",
-  "fg_percent_from_x16_3p_range",
-  "fg_percent_from_x3p_range",
-  "percent_assisted_x2p_fg",
-  "percent_assisted_x3p_fg",
-  "percent_dunks_of_fga",
-  "num_of_dunks",
-  "percent_corner_3s_of_3pa",
-  "corner_3_point_percent",
-  "num_heaves_attempted",
-  "num_heaves_made",
-];
-
-const SEASON_CHAMPIONSHIPS_KEYS = ["CHMP", "FMVP"];
-
-const SEASON_ALL_LEAGUE_TEAMS_KEYS = [
-  "all_star",
-  "all_defense_share",
-  "all_nba_share",
-  "all_rookie_share",
-  "all_defense_1st",
-  "all_defense_2nd",
-  "all_defense_ORV",
-  "all_nba_1T",
-  "all_nba_2T",
-  "all_nba_3T",
-  "all_nba_ORV",
-  "all_rookie_1st",
-  "all_rookie_2nd",
-  "all_rookie_ORV",
-];
-
-const SEASON_INDIVIDUAL_AWARDS_KEYS = [
-  "mvp_winner",
-  "mvp_share",
-  "roy_winner",
-  "roy_share",
-  "smoy_winner",
-  "smoy_share",
-  "mip_winner",
-  "mip_share",
-  "dpoy_winner",
-  "dpoy_share",
-  "clutch_poy_winner",
-  "clutch_poy_share",
-];
-
-// Career columns (from nba_player_careers.csv)
-const CAREER_PER_GAME_KEYS = [
-  "mp_per_game",
-  "fg_per_game",
-  "fga_per_game",
-  "fg_percent",
-  "x3p_per_game",
-  "x3pa_per_game",
-  "x3p_percent",
-  "x2p_per_game",
-  "x2pa_per_game",
-  "x2p_percent",
-  "e_fg_percent",
-  "ft_per_game",
-  "fta_per_game",
-  "ft_percent",
-  "orb_per_game",
-  "drb_per_game",
-  "trb_per_game",
-  "ast_per_game",
-  "stl_per_game",
-  "blk_per_game",
-  "tov_per_game",
-  "pf_per_game",
-  "pts_per_game",
-];
-
-const CAREER_TOTAL_KEYS = [
-  "career_g",
-  "career_gs",
-  "career_mp",
-  "career_fg",
-  "career_fga",
-  "career_x3p",
-  "career_x3pa",
-  "career_x2p",
-  "career_x2pa",
-  "career_ft",
-  "career_fta",
-  "career_orb",
-  "career_drb",
-  "career_trb",
-  "career_ast",
-  "career_stl",
-  "career_blk",
-  "career_tov",
-  "career_pf",
-  "career_pts",
-  "career_trp_dbl",
-];
-
-const CAREER_ADVANCED_KEYS = [
-  "career_per",
-  "career_ts_percent",
-  "career_x3p_ar",
-  "career_f_tr",
-  "career_orb_percent",
-  "career_drb_percent",
-  "career_trb_percent",
-  "career_ast_percent",
-  "career_stl_percent",
-  "career_blk_percent",
-  "career_tov_percent",
-  "career_usg_percent",
-  "career_ows",
-  "career_dws",
-  "career_ws",
-  "career_ws_48",
-  "career_obpm",
-  "career_dbpm",
-  "career_bpm",
-  "career_vorp",
-];
-
-const CAREER_PER_100_KEYS = [
-  "career_fg_per_100_poss",
-  "career_fga_per_100_poss",
-  "career_x3p_per_100_poss",
-  "career_x3pa_per_100_poss",
-  "career_x2p_per_100_poss",
-  "career_x2pa_per_100_poss",
-  "career_ft_per_100_poss",
-  "career_fta_per_100_poss",
-  "career_orb_per_100_poss",
-  "career_drb_per_100_poss",
-  "career_trb_per_100_poss",
-  "career_ast_per_100_poss",
-  "career_stl_per_100_poss",
-  "career_blk_per_100_poss",
-  "career_tov_per_100_poss",
-  "career_pf_per_100_poss",
-  "career_pts_per_100_poss",
-  "career_o_rtg",
-  "career_d_rtg",
-];
-
-const CAREER_PLAY_BY_PLAY_KEYS = [
-  "career_pg_percent",
-  "career_sg_percent",
-  "career_sf_percent",
-  "career_pf_percent",
-  "career_c_percent",
-  "career_on_court_plus_minus_per_100_poss",
-  "career_net_plus_minus_per_100_poss",
-  "career_bad_pass_turnover",
-  "career_lost_ball_turnover",
-  "career_shooting_foul_committed",
-  "career_offensive_foul_committed",
-  "career_shooting_foul_drawn",
-  "career_offensive_foul_drawn",
-  "career_points_generated_by_assists",
-  "career_and1",
-  "career_fga_blocked",
-];
-
-const CAREER_SHOOTING_KEYS = [
-  "career_avg_dist_fga",
-  "career_percent_fga_from_x2p_range",
-  "career_percent_fga_from_x0_3_range",
-  "career_percent_fga_from_x3_10_range",
-  "career_percent_fga_from_x10_16_range",
-  "career_percent_fga_from_x16_3p_range",
-  "career_percent_fga_from_x3p_range",
-  "career_fg_percent_from_x2p_range",
-  "career_fg_percent_from_x0_3_range",
-  "career_fg_percent_from_x3_10_range",
-  "career_fg_percent_from_x10_16_range",
-  "career_fg_percent_from_x16_3p_range",
-  "career_fg_percent_from_x3p_range",
-  "career_percent_assisted_x2p_fg",
-  "career_percent_assisted_x3p_fg",
-  "career_percent_dunks_of_fga",
-  "career_num_of_dunks",
-  "career_percent_corner_3s_of_3pa",
-  "career_corner_3_point_percent",
-  "career_num_heaves_attempted",
-  "career_num_heaves_made",
-];
-
-const CAREER_CHAMPIONSHIPS_KEYS = ["career_CHMP_count", "career_FMVP_count"];
-
-const CAREER_ALL_LEAGUE_TEAMS_KEYS = [
-  "career_all_star_count",
-  "career_all_defense_share_mean",
-  "career_all_nba_share_mean",
-  "career_all_rookie_share_mean",
-  "career_all_defense_1st_count",
-  "career_all_defense_2nd_count",
-  "career_all_defense_ORV_count",
-  "career_all_nba_1T_count",
-  "career_all_nba_2T_count",
-  "career_all_nba_3T_count",
-  "career_all_nba_ORV_count",
-  "career_all_rookie_1st_count",
-  "career_all_rookie_2nd_count",
-  "career_all_rookie_ORV_count",
-];
-
-const CAREER_INDIVIDUAL_AWARDS_KEYS = [
-  "career_mvp_winner_count",
-  "career_mvp_share_mean",
-  "career_roy_winner_count",
-  "career_roy_share_sum",
-  "career_smoy_winner_count",
-  "career_smoy_share_mean",
-  "career_mip_winner_count",
-  "career_mip_share_mean",
-  "career_dpoy_winner_count",
-  "career_dpoy_share_mean",
-  "career_clutch_poy_winner_count",
-  "career_clutch_poy_share_mean",
-];
-
-// Group config used for the SELECTED player stats panel
-type StatGroupConfig = {
-  label: string;
-  seasonKeys: string[];
-  careerKeys: string[];
-  alwaysShow?: boolean; // Per Game always shown; others only when "Show move" = true
-};
-
-const STAT_GROUP_CONFIG: StatGroupConfig[] = [
-  {
-    label: "Per Game",
-    seasonKeys: SEASON_PER_GAME_KEYS,
-    careerKeys: CAREER_PER_GAME_KEYS,
-    alwaysShow: true,
-  },
-  {
-    label: "Totals",
-    seasonKeys: SEASON_TOTAL_KEYS,
-    careerKeys: CAREER_TOTAL_KEYS,
-  },
-  {
-    label: "Advanced",
-    seasonKeys: SEASON_ADVANCED_KEYS,
-    careerKeys: CAREER_ADVANCED_KEYS,
-  },
-  {
-    label: "Per 100",
-    seasonKeys: SEASON_PER_100_KEYS,
-    careerKeys: CAREER_PER_100_KEYS,
-  },
-  {
-    label: "Play by Play",
-    seasonKeys: SEASON_PLAY_BY_PLAY_KEYS,
-    careerKeys: CAREER_PLAY_BY_PLAY_KEYS,
-  },
-  {
-    label: "Shooting",
-    seasonKeys: SEASON_SHOOTING_KEYS,
-    careerKeys: CAREER_SHOOTING_KEYS,
-  },
-  {
-    label: "Championships",
-    seasonKeys: SEASON_CHAMPIONSHIPS_KEYS,
-    careerKeys: CAREER_CHAMPIONSHIPS_KEYS,
-  },
-  {
-    label: "All-League Teams",
-    seasonKeys: SEASON_ALL_LEAGUE_TEAMS_KEYS,
-    careerKeys: CAREER_ALL_LEAGUE_TEAMS_KEYS,
-  },
-  {
-    label: "Individual Awards",
-    seasonKeys: SEASON_INDIVIDUAL_AWARDS_KEYS,
-    careerKeys: CAREER_INDIVIDUAL_AWARDS_KEYS,
-  },
-];
+import {
+  STAT_GROUPS,
+  ACCOLADE_GROUPS,
+  GroupName,
+  GroupsPreset,
+  STAT_LABELS,
+  STAT_GROUP_CONFIG,
+} from "../statsConfig";
+import { Player } from "../types";
 
 export default function SimilarPlayerGenerator() {
   const [query, setQuery] = useState("");
@@ -707,14 +276,17 @@ export default function SimilarPlayerGenerator() {
                   columnGap: "24px",
                 }}
               >
-                {availableKeys.map((key) => (
-                  <div key={key}>
-                    <strong>{key}:</strong>{" "}
-                    {Number.isFinite(stats[key])
-                      ? stats[key].toFixed(2)
-                      : stats[key]}
-                  </div>
-                ))}
+                {availableKeys.map((key) => {
+                  const label = STAT_LABELS[key] ?? key;
+                  return (
+                    <div key={key}>
+                      <strong>{label}:</strong>{" "}
+                      {Number.isFinite(stats[key])
+                        ? stats[key].toFixed(3).replace(/\.?0+$/, "")
+                        : stats[key]}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
@@ -1193,7 +765,11 @@ export default function SimilarPlayerGenerator() {
                   {team && <div>Team(s): {team}</div>}
                   {player.similarityScore != null && (
                     <div>
-                      Similarity: {(player.similarityScore * 100).toFixed(2)}%
+                      Similarity:{" "}
+                      {(player.similarityScore * 100)
+                        .toFixed(3)
+                        .replace(/\.?0+$/, "")}
+                      %
                     </div>
                   )}
 
@@ -1263,14 +839,19 @@ export default function SimilarPlayerGenerator() {
                                 columnGap: "24px",
                               }}
                             >
-                              {availableKeys.map((k) => (
-                                <div key={k}>
-                                  <strong>{k}:</strong>{" "}
-                                  {Number.isFinite(stats[k])
-                                    ? stats[k].toFixed(2)
-                                    : stats[k]}
-                                </div>
-                              ))}
+                              {availableKeys.map((k) => {
+                                const label = STAT_LABELS[k] ?? k;
+                                return (
+                                  <div key={k}>
+                                    <strong>{label}:</strong>{" "}
+                                    {Number.isFinite(stats[k])
+                                      ? stats[k]
+                                          .toFixed(3)
+                                          .replace(/\.?0+$/, "")
+                                      : stats[k]}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         );

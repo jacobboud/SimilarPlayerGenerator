@@ -88,10 +88,10 @@ namespace NBASimilarPlayerGenerator.Services
                 ("Advanced", 60, 79),
                 ("Per 100", 80, 98),
                 ("Play by Play", 99, 114),
-                ("Shooting", 115, 135),
-                ("Championships", 136, 137),
-                ("All-League Teams", 138, 151),
-                ("Individual Awards", 152, 163)
+                ("Shooting", 115, 133),
+                ("Championships", 134, 135),
+                ("All-League Teams", 136, 149),
+                ("Individual Awards", 150, 161)
             };
 
             var dict = new Dictionary<string, List<string>>();
@@ -124,10 +124,10 @@ namespace NBASimilarPlayerGenerator.Services
                 ("Advanced", 58, 77),
                 ("Per 100", 78, 96),
                 ("Play by Play", 97, 112),
-                ("Shooting", 113, 133),
-                ("Championships", 134, 135),
-                ("All-League Teams", 136, 149),
-                ("Individual Awards", 150, 161)
+                ("Shooting", 113, 131),
+                ("Championships", 132, 133),
+                ("All-League Teams", 134, 147),
+                ("Individual Awards", 148, 159)
             };
 
             var dict = new Dictionary<string, List<string>>();
@@ -144,6 +144,84 @@ namespace NBASimilarPlayerGenerator.Services
             }
 
             return dict;
+        }
+
+        private Dictionary<string, int> GetSeasonTargetNonNullCounts(
+    string playerId,
+    int season,
+    Dictionary<string, List<string>> featureGroups,
+    List<string> selectedGroups)
+        {
+            var targetRowDyn = _seasonRows.FirstOrDefault(r =>
+            {
+                var row = (IDictionary<string, object?>)r;
+                var pid = row["player_id"]?.ToString()?.Trim();
+                var seasonStr = row["season"]?.ToString();
+                return pid == playerId && seasonStr == season.ToString();
+            });
+
+            if (targetRowDyn is null)
+                throw new InvalidOperationException(
+                    $"No row found for player_id='{playerId}', season={season} in seasons data.");
+
+            var targetRow = (IDictionary<string, object?>)targetRowDyn;
+            var result = new Dictionary<string, int>();
+
+            foreach (var g in selectedGroups)
+            {
+                if (!featureGroups.TryGetValue(g, out var groupCols))
+                    continue; // should not happen, but be defensive
+
+                int count = 0;
+                foreach (var col in groupCols)
+                {
+                    if (!targetRow.ContainsKey(col)) continue;
+                    if (TryGetNumericOrBool(targetRow[col], out _))
+                        count++;
+                }
+
+                result[g] = count;
+            }
+
+            return result;
+        }
+
+        private Dictionary<string, int> GetCareerTargetNonNullCounts(
+    string playerId,
+    Dictionary<string, List<string>> featureGroups,
+    List<string> selectedGroups)
+        {
+            var targetRowDyn = _careerRows.FirstOrDefault(r =>
+            {
+                var row = (IDictionary<string, object?>)r;
+                var pid = row["player_id"]?.ToString()?.Trim();
+                return pid == playerId;
+            });
+
+            if (targetRowDyn is null)
+                throw new InvalidOperationException(
+                    $"player_id='{playerId}' not found in careers data.");
+
+            var targetRow = (IDictionary<string, object?>)targetRowDyn;
+            var result = new Dictionary<string, int>();
+
+            foreach (var g in selectedGroups)
+            {
+                if (!featureGroups.TryGetValue(g, out var groupCols))
+                    continue;
+
+                int count = 0;
+                foreach (var col in groupCols)
+                {
+                    if (!targetRow.ContainsKey(col)) continue;
+                    if (TryGetNumericOrBool(targetRow[col], out _))
+                        count++;
+                }
+
+                result[g] = count;
+            }
+
+            return result;
         }
 
         private static List<string> GetFeatureColumns(
@@ -410,8 +488,9 @@ namespace NBASimilarPlayerGenerator.Services
         }
 
         private IEnumerable<dynamic> FilterSeasonRowsByGroups(
-            Dictionary<string, List<string>> featureGroups,
-            List<string> selectedGroups)
+    Dictionary<string, List<string>> featureGroups,
+    List<string> selectedGroups,
+    Dictionary<string, int> targetNonNullCounts)
         {
             foreach (var rowDyn in _seasonRows)
             {
@@ -426,19 +505,26 @@ namespace NBASimilarPlayerGenerator.Services
                         break;
                     }
 
-                    bool hasAny = false;
+                    if (!targetNonNullCounts.TryGetValue(g, out var targetCount) || targetCount <= 0)
+                    {
+                        // target has no stats in this group – by this point that
+                        // really shouldn't happen because of pruning/validation,
+                        // but if it does, drop this group.
+                        keep = false;
+                        break;
+                    }
 
+                    int candidateCount = 0;
                     foreach (var col in groupCols)
                     {
                         if (!row.ContainsKey(col)) continue;
                         if (TryGetNumericOrBool(row[col], out _))
-                        {
-                            hasAny = true;
-                            break;
-                        }
+                            candidateCount++;
                     }
 
-                    if (!hasAny)
+                    var minRequired = (int)Math.Ceiling(targetCount / 2.0);
+
+                    if (candidateCount < minRequired)
                     {
                         keep = false;
                         break;
@@ -495,8 +581,9 @@ namespace NBASimilarPlayerGenerator.Services
         }
 
         private IEnumerable<dynamic> FilterCareerRowsByGroups(
-            Dictionary<string, List<string>> featureGroups,
-            List<string> selectedGroups)
+    Dictionary<string, List<string>> featureGroups,
+    List<string> selectedGroups,
+    Dictionary<string, int> targetNonNullCounts)
         {
             foreach (var rowDyn in _careerRows)
             {
@@ -511,19 +598,23 @@ namespace NBASimilarPlayerGenerator.Services
                         break;
                     }
 
-                    bool hasAny = false;
+                    if (!targetNonNullCounts.TryGetValue(g, out var targetCount) || targetCount <= 0)
+                    {
+                        keep = false;
+                        break;
+                    }
 
+                    int candidateCount = 0;
                     foreach (var col in groupCols)
                     {
                         if (!row.ContainsKey(col)) continue;
                         if (TryGetNumericOrBool(row[col], out _))
-                        {
-                            hasAny = true;
-                            break;
-                        }
+                            candidateCount++;
                     }
 
-                    if (!hasAny)
+                    var minRequired = (int)Math.Ceiling(targetCount / 2.0);
+
+                    if (candidateCount < minRequired)
                     {
                         keep = false;
                         break;
@@ -651,8 +742,12 @@ namespace NBASimilarPlayerGenerator.Services
                 ValidateSeasonTargetHasGroups(playerId, season, fg, groupNames);
             }
 
-            // Filter season rows: must have some data in each group
-            var filteredRows = FilterSeasonRowsByGroups(fg, groupNames);
+            // Compute how many stats the TARGET has in each group
+            var targetNonNullCounts = GetSeasonTargetNonNullCounts(playerId, season, fg, groupNames);
+
+            // Filter season rows: they must have at least half as many non-null stats
+            // in each group as the target player.
+            var filteredRows = FilterSeasonRowsByGroups(fg, groupNames, targetNonNullCounts);
             var rowList = filteredRows.ToList();
 
             // Build matrix [rowIndex, colIndex] for feature values
@@ -781,7 +876,8 @@ namespace NBASimilarPlayerGenerator.Services
             }
 
             // Filter careers by group availability
-            var filteredRows = FilterCareerRowsByGroups(fg, groupNames);
+            var targetNonNullCounts = GetCareerTargetNonNullCounts(playerId, fg, groupNames);
+            var filteredRows = FilterCareerRowsByGroups(fg, groupNames, targetNonNullCounts);
             var rowList = filteredRows.ToList();
 
             // Build matrix

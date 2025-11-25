@@ -1,2 +1,0 @@
-C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\wwwroot\nba_player_careers.csv
-C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\wwwroot\nba_player_seasons.csv
