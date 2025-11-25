@@ -6,10 +6,10 @@ function App() {
       style={{
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
+        alignItems: "flex-start", // <- was "center"
         minHeight: "100vh",
         width: "100vw",
-        backgroundColor: "#f9f9f9", // optional: light background
+        backgroundColor: "#f9f9f9",
         padding: "2rem",
         boxSizing: "border-box",
       }}

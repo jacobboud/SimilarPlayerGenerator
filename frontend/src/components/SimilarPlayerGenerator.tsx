@@ -250,10 +250,89 @@ export default function SimilarPlayerGenerator() {
     return "Season Per Game Stats";
   };
 
+  type StatMode = "career" | "season";
+
+  function denormalizeCumulativeChain(
+    stats: Record<string, number>,
+    keys: string[]
+  ) {
+    // keys are in order: [1st, 2nd, 3rd, RV] or [1st, 2nd, RV]
+    const values = keys.map((k) => stats[k] ?? 0);
+    const result: number[] = [];
+
+    for (let i = 0; i < values.length; i++) {
+      if (i === 0) {
+        result[i] = values[i];
+      } else {
+        result[i] = values[i] - values[i - 1];
+      }
+      if (result[i] < 0) result[i] = 0; // safety
+    }
+
+    keys.forEach((k, i) => {
+      stats[k] = result[i];
+    });
+  }
+
+  function transformStatsForDisplay(
+    raw: Record<string, number>,
+    mode: StatMode
+  ): Record<string, number> {
+    const stats = { ...raw }; // don't mutate original
+
+    if (mode === "season") {
+      // All-NBA 1 / 2 / 3 / ORV
+      denormalizeCumulativeChain(stats, [
+        "all_nba_1T",
+        "all_nba_2T",
+        "all_nba_3T",
+        "all_nba_ORV",
+      ]);
+
+      // All-Defense 1st / 2nd / ORV
+      denormalizeCumulativeChain(stats, [
+        "all_defense_1st",
+        "all_defense_2nd",
+        "all_defense_ORV",
+      ]);
+
+      // All-Rookie 1st / 2nd / ORV
+      denormalizeCumulativeChain(stats, [
+        "all_rookie_1st",
+        "all_rookie_2nd",
+        "all_rookie_ORV",
+      ]);
+    } else {
+      // CAREER versions (counts)
+      denormalizeCumulativeChain(stats, [
+        "career_all_nba_1T_count",
+        "career_all_nba_2T_count",
+        "career_all_nba_3T_count",
+        "career_all_nba_ORV_count",
+      ]);
+
+      denormalizeCumulativeChain(stats, [
+        "career_all_defense_1st_count",
+        "career_all_defense_2nd_count",
+        "career_all_defense_ORV_count",
+      ]);
+
+      denormalizeCumulativeChain(stats, [
+        "career_all_rookie_1st_count",
+        "career_all_rookie_2nd_count",
+        "career_all_rookie_ORV_count",
+      ]);
+    }
+
+    return stats;
+  }
+
   // Render grouped stats for the selected player
   const renderSelectedPlayerStatGroups = (mode: "career" | "season") => {
-    const stats = getSelectedPlayerStats();
-    if (!stats) return null;
+    const rawStats = getSelectedPlayerStats();
+    if (!rawStats) return null;
+
+    const stats = transformStatsForDisplay(rawStats, mode);
 
     return (
       <>
@@ -270,7 +349,19 @@ export default function SimilarPlayerGenerator() {
 
           return (
             <div key={group.label} style={{ marginBottom: "16px" }}>
-              <h4 style={{ marginBottom: "8px" }}>{group.label}</h4>
+              <h4
+                style={{
+                  marginBottom: "8px",
+                  fontSize: "1.05rem",
+                  fontWeight: 700,
+                  color: "#1f2937", // darker heading
+                  borderBottom: "1px solid #e5e7eb",
+                  paddingBottom: "4px",
+                }}
+              >
+                {group.label}
+              </h4>
+
               <div
                 style={{
                   display: "grid",
@@ -755,8 +846,12 @@ export default function SimilarPlayerGenerator() {
                 {recommendations.map((player, index) => {
                   const mode: "career" | "season" =
                     usedSeason != null ? "season" : "career";
-                  const stats =
+                  const rawStats =
                     mode === "season" ? player.seasonStats : player.careerStats;
+
+                  const displayStats = rawStats
+                    ? transformStatsForDisplay(rawStats, mode)
+                    : null;
 
                   const team =
                     mode === "season"
@@ -823,7 +918,7 @@ export default function SimilarPlayerGenerator() {
                       </button>
 
                       {/* Only show stats when this card is expanded, and only for the groups being compared */}
-                      {isShown && stats && (
+                      {isShown && displayStats && (
                         <div
                           style={{
                             maxHeight: "300px",
@@ -835,6 +930,7 @@ export default function SimilarPlayerGenerator() {
                             marginTop: "10px",
                             width: "100%",
                             textAlign: "left",
+                            boxSizing: "border-box",
                           }}
                         >
                           {STAT_GROUP_CONFIG.map((group) => {
@@ -851,7 +947,7 @@ export default function SimilarPlayerGenerator() {
                                 : group.careerKeys;
 
                             const availableKeys = keys.filter(
-                              (k) => k in stats
+                              (k) => k in displayStats
                             );
                             if (availableKeys.length === 0) return null;
 
@@ -860,9 +956,19 @@ export default function SimilarPlayerGenerator() {
                                 key={group.label}
                                 style={{ marginBottom: "12px" }}
                               >
-                                <h4 style={{ marginBottom: "6px" }}>
+                                <h4
+                                  style={{
+                                    marginBottom: "8px",
+                                    fontSize: "1.05rem",
+                                    fontWeight: 700,
+                                    color: "#1f2937",
+                                    borderBottom: "1px solid #e5e7eb",
+                                    paddingBottom: "4px",
+                                  }}
+                                >
                                   {group.label}
                                 </h4>
+
                                 <div
                                   style={{
                                     display: "grid",
@@ -874,14 +980,15 @@ export default function SimilarPlayerGenerator() {
                                 >
                                   {availableKeys.map((k) => {
                                     const label = STAT_LABELS[k] ?? k;
+                                    const value = displayStats[k];
                                     return (
                                       <div key={k}>
                                         <strong>{label}:</strong>{" "}
-                                        {Number.isFinite(stats[k])
-                                          ? stats[k]
+                                        {Number.isFinite(value)
+                                          ? value
                                               .toFixed(3)
                                               .replace(/\.?0+$/, "")
-                                          : stats[k]}
+                                          : value}
                                       </div>
                                     );
                                   })}
