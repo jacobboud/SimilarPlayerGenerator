@@ -85,3 +85,11 @@ C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\N
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Release\net8.0\NBASimilarPlayerGenerator.pdb
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Release\net8.0\NBASimilarPlayerGenerator.genruntimeconfig.cache
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Release\net8.0\ref\NBASimilarPlayerGenerator.dll
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Release\net8.0\publish\publish\web.config
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Release\net8.0\publish\publish\appsettings.Development.json
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Release\net8.0\publish\publish\appsettings.json
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Release\net8.0\publish\publish\career_recommendations.json
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Release\net8.0\publish\publish\NBASimilarPlayerGenerator.deps.json
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Release\net8.0\publish\publish\NBASimilarPlayerGenerator.runtimeconfig.json
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Release\net8.0\publish\publish\NBASimilarPlayerGenerator.staticwebassets.endpoints.json
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Release\net8.0\publish\publish\season_recommendations.json
