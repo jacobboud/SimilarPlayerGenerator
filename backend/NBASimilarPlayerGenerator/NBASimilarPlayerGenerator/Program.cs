@@ -24,7 +24,9 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "http://localhost:3000", // local dev
-                "https://polite-mud-0ca1bbf1e.6.azurestaticapps.net" // deployed frontend
+                "https://mango-sea-0568c211e.3.azurestaticapps.net/", // deployed frontend
+                "https://thenbaanalyst.com",
+                "https://www.thenbaanalyst.com"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
