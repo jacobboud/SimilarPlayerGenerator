@@ -1,12 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "a3feug8s5CX3lSkrQsjpmZF+lWoY49jttlUiDs6Ymbc=",
-  "Source": "NBASimilarPlayerGenerator",
-  "BasePath": "_content/NBASimilarPlayerGenerator",
-  "Mode": "Default",
-  "ManifestType": "Publish",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": [],
-  "Endpoints": []
-}
+{"Version":1,"Hash":"Mvd2XHZK14yqJgt7vl5ayMaETqFd2uQLvHa4U/CrGlE=","Source":"NBASimilarPlayerGenerator","BasePath":"_content/NBASimilarPlayerGenerator","Mode":"Default","ManifestType":"Publish","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[{"Name":"NBASimilarPlayerGenerator\\wwwroot","Source":"NBASimilarPlayerGenerator","ContentRoot":"C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\wwwroot\\","BasePath":"_content/NBASimilarPlayerGenerator","Pattern":"**"}],"Assets":[],"Endpoints":[]}

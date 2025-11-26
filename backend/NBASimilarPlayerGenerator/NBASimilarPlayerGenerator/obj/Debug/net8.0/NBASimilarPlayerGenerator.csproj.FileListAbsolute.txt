@@ -91,3 +91,5 @@ C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\N
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\NBASimilarPlayerGenerator.genruntimeconfig.cache
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\ref\NBASimilarPlayerGenerator.dll
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\NBASimilarPlayerGenerator.staticwebassets.runtime.json
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\nba_player_careers.csv
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\nba_player_seasons.csv
