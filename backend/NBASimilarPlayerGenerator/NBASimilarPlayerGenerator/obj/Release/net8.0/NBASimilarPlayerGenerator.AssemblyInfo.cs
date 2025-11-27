@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NBASimilarPlayerGenerator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+db902c5706f3423b5e631c70a9ce159349ca30d7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6d678b185803b8de7a6a8be2b23885cccd4f3d0b")]
 [assembly: System.Reflection.AssemblyProductAttribute("NBASimilarPlayerGenerator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NBASimilarPlayerGenerator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

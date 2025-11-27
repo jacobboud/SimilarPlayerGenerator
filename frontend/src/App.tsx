@@ -1,3 +1,4 @@
+// App.tsx
 import Recommender from "./components/SimilarPlayerGenerator";
 
 function App() {
@@ -6,10 +7,11 @@ function App() {
       style={{
         display: "flex",
         justifyContent: "center",
-        alignItems: "flex-start", // <- was "center"
+        alignItems: "flex-start",
         minHeight: "100vh",
         width: "100vw",
-        backgroundColor: "#f9f9f9",
+        backgroundColor: "var(--color-bg)",
+        color: "var(--color-text-primary)",
         padding: "2rem",
         boxSizing: "border-box",
       }}

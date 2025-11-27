@@ -354,8 +354,8 @@ export default function SimilarPlayerGenerator() {
                   marginBottom: "8px",
                   fontSize: "1.05rem",
                   fontWeight: 700,
-                  color: "#1f2937", // darker heading
-                  borderBottom: "1px solid #e5e7eb",
+                  color: "var(--color-text-primary)",
+                  borderBottom: "1px solid var(--color-border)",
                   paddingBottom: "4px",
                 }}
               >
@@ -410,12 +410,19 @@ export default function SimilarPlayerGenerator() {
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#f9f9f9",
+        backgroundColor: "var(--color-bg)",
+        color: "var(--color-text-primary)",
         padding: "30px 16px",
         textAlign: "center",
       }}
     >
-      <h1 style={{ fontSize: "2rem", fontWeight: "bold", color: "#1f2937" }}>
+      <h1
+        style={{
+          fontSize: "2rem",
+          fontWeight: "bold",
+          color: "var(--color-text-primary)",
+        }}
+      >
         Similar Player Generator
       </h1>
 
@@ -439,14 +446,22 @@ export default function SimilarPlayerGenerator() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Type a player name..."
-            style={{ padding: "10px", width: "90vw", maxWidth: "400px" }}
+            style={{
+              padding: "10px",
+              width: "90vw",
+              maxWidth: "400px",
+              borderRadius: "4px",
+              border: "1px solid var(--color-border)",
+              backgroundColor: "var(--color-surface)",
+              color: "var(--color-text-primary)",
+            }}
           />
           <button
             onClick={handleSearch}
             style={{
               padding: "10px 20px",
-              backgroundColor: "#007bff",
-              color: "white",
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-contrast)",
               border: "none",
               borderRadius: "4px",
               width: "fit-content",
@@ -466,9 +481,11 @@ export default function SimilarPlayerGenerator() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 padding: "8px",
-                border: "1px solid #ccc",
-                marginBottom: "5px",
+                border: "1px solid var(--color-border)",
                 borderRadius: "4px",
+                marginBottom: "5px",
+                backgroundColor: "var(--color-surface)",
+                color: "var(--color-text-primary)",
               }}
             >
               <span>
@@ -513,8 +530,8 @@ export default function SimilarPlayerGenerator() {
             style={{
               maxHeight: "400px",
               overflowY: "auto",
-              backgroundColor: "#ffffff",
-              border: "1px solid #ccc",
+              backgroundColor: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
               borderRadius: "4px",
               padding: "20px",
               margin: "0 auto 20px",
@@ -540,25 +557,36 @@ export default function SimilarPlayerGenerator() {
                   flex: 1,
                   padding: "8px 12px",
                   borderRadius: "4px",
-                  border: "1px solid #ccc",
+                  border: "1px solid var(--color-border)",
                   backgroundColor:
-                    statsTab === "career" ? "#007bff" : "#f0f0f0",
-                  color: statsTab === "career" ? "white" : "black",
+                    statsTab === "career"
+                      ? "var(--color-primary)"
+                      : "var(--color-surface)",
+                  color:
+                    statsTab === "career"
+                      ? "var(--color-primary-contrast)"
+                      : "var(--color-text-primary)",
                   cursor: "pointer",
                 }}
               >
                 Career
               </button>
+
               <button
                 onClick={() => setStatsTab("season")}
                 style={{
                   flex: 1,
                   padding: "8px 12px",
                   borderRadius: "4px",
-                  border: "1px solid #ccc",
+                  border: "1px solid var(--color-border)",
                   backgroundColor:
-                    statsTab === "season" ? "#007bff" : "#f0f0f0",
-                  color: statsTab === "season" ? "white" : "black",
+                    statsTab === "season"
+                      ? "var(--color-primary)"
+                      : "var(--color-surface)",
+                  color:
+                    statsTab === "season"
+                      ? "var(--color-primary-contrast)"
+                      : "var(--color-text-primary)",
                   cursor: "pointer",
                 }}
               >
@@ -608,8 +636,8 @@ export default function SimilarPlayerGenerator() {
                     onClick={() => setShowAdvanced((prev) => !prev)}
                     style={{
                       padding: "6px 14px",
-                      backgroundColor: "#6c757d",
-                      color: "white",
+                      backgroundColor: "var(--color-secondary)",
+                      color: "var(--color-primary-contrast)",
                       border: "none",
                       borderRadius: "4px",
                     }}
@@ -619,7 +647,12 @@ export default function SimilarPlayerGenerator() {
                 </div>
               </>
             ) : (
-              <div style={{ textAlign: "center", color: "#666" }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "var(--color-text-muted)",
+                }}
+              >
                 {statsTab === "season"
                   ? "Select a season to view stats."
                   : "No stats available."}
@@ -635,10 +668,10 @@ export default function SimilarPlayerGenerator() {
               maxWidth: "700px",
               marginInline: "auto",
               textAlign: "left",
-              backgroundColor: "#fff",
+              backgroundColor: "var(--color-surface)",
               borderRadius: "8px",
               padding: "16px",
-              border: "1px solid #ddd",
+              border: "1px solid var(--color-border)",
             }}
           >
             <h2 style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
@@ -783,7 +816,9 @@ export default function SimilarPlayerGenerator() {
             Step 3: Generate Similar Players
           </h2>
 
-          <div style={{ marginBottom: "10px", color: "#555" }}>
+          <div
+            style={{ marginBottom: "10px", color: "var(--color-text-muted)" }}
+          >
             {isSeasonComparison
               ? `Currently comparing SEASONS. Choose the Career tab if you want career-based comparisons.`
               : "Currently comparing CAREERS. Choose the Season tab and pick a season if you want season-based comparisons."}
@@ -793,8 +828,8 @@ export default function SimilarPlayerGenerator() {
             onClick={generateRecommendations}
             style={{
               padding: "10px 20px",
-              backgroundColor: "#007bff",
-              color: "white",
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-contrast)",
               border: "none",
               borderRadius: "4px",
             }}
@@ -814,9 +849,9 @@ export default function SimilarPlayerGenerator() {
                 margin: "0 auto 20px",
                 padding: "12px 16px",
                 borderRadius: "6px",
-                border: "1px solid #f59e0b",
-                backgroundColor: "#fffbeb",
-                color: "#92400e",
+                border: "1px solid var(--color-warning-border)",
+                backgroundColor: "var(--color-warning-bg)",
+                color: "var(--color-warning-text)",
                 textAlign: "left",
                 fontSize: "0.95rem",
               }}
@@ -874,13 +909,13 @@ export default function SimilarPlayerGenerator() {
                     <div
                       key={key}
                       style={{
-                        backgroundColor: "white",
-                        border: "1px solid #ccc",
+                        backgroundColor: "var(--color-surface)",
+                        border: "1px solid var(--color-border)",
                         borderRadius: "8px",
                         padding: "20px",
                         width: "90vw",
                         maxWidth: "600px",
-                        boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+                        boxShadow: "var(--shadow-elevated)",
                       }}
                     >
                       <div>
@@ -908,8 +943,8 @@ export default function SimilarPlayerGenerator() {
                         style={{
                           marginTop: "6px",
                           padding: "6px 12px",
-                          backgroundColor: "#28a745",
-                          color: "white",
+                          backgroundColor: "var(--color-success)",
+                          color: "var(--color-primary-contrast)",
                           border: "none",
                           borderRadius: "4px",
                         }}
@@ -923,8 +958,8 @@ export default function SimilarPlayerGenerator() {
                           style={{
                             maxHeight: "300px",
                             overflowY: "auto",
-                            backgroundColor: "#ffffff",
-                            border: "1px solid #ccc",
+                            backgroundColor: "var(--color-surface)",
+                            border: "1px solid var(--color-border)",
                             borderRadius: "4px",
                             padding: "20px",
                             marginTop: "10px",
@@ -961,8 +996,9 @@ export default function SimilarPlayerGenerator() {
                                     marginBottom: "8px",
                                     fontSize: "1.05rem",
                                     fontWeight: 700,
-                                    color: "#1f2937",
-                                    borderBottom: "1px solid #e5e7eb",
+                                    color: "var(--color-text-primary)",
+                                    borderBottom:
+                                      "1px solid var(--color-border)",
                                     paddingBottom: "4px",
                                   }}
                                 >

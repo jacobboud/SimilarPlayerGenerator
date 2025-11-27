@@ -1,11 +1,29 @@
 :root {
+  /* Design tokens: LIGHT default */
+  --color-bg: #f3f4f6; /* page background */
+  --color-surface: #ffffff; /* cards, panels */
+  --color-border: #d1d5db;
+  --color-text-primary: #111827;
+  --color-text-muted: #6b7280;
+
+  --color-primary: #2563eb;
+  --color-primary-contrast: #ffffff;
+  --color-secondary: #4b5563;
+  --color-success: #16a34a;
+
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fbbf24;
+  --color-warning-text: #92400e;
+
+  --shadow-elevated: 0 4px 10px rgba(15, 23, 42, 0.1);
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,13 +31,35 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* DARK overrides */
+    --color-bg: #020617; /* page background (near-black) */
+    --color-surface: #0b1120; /* raised cards */
+    --color-border: #1f2937;
+    --color-text-primary: #e5e7eb;
+    --color-text-muted: #9ca3af;
+
+    --color-primary: #60a5fa;
+    --color-primary-contrast: #020617;
+    --color-secondary: #9ca3af;
+    --color-success: #4ade80;
+
+    --color-warning-bg: #451a03;
+    --color-warning-border: #f97316;
+    --color-warning-text: #fed7aa;
+
+    --shadow-elevated: 0 10px 30px rgba(0, 0, 0, 0.6);
+  }
+}
+
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  filter: brightness(0.9);
 }
 
 body {
@@ -27,14 +67,18 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  display: block; /* <-- ensures it's not flex */
+  display: block;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
 }
 
+/* Generic heading size is fine; color will inherit */
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
 
+/* Base button style (used when you don't override inline) */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -42,27 +86,16 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-primary);
+  color: var(--color-primary-contrast);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background-color 0.25s, filter 0.15s ease;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--color-primary);
+  filter: brightness(1.05);
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }
