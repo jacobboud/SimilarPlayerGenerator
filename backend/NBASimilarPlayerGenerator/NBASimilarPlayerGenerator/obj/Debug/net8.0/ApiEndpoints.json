@@ -1,5 +1,21 @@
 [
   {
+    "ContainingType": "NBASimilarPlayerGenerator.Controllers.GoatController",
+    "Method": "CalculateGoatScores",
+    "RelativePath": "api/goat",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NBASimilarPlayerGenerator.Models.GoatRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NBASimilarPlayerGenerator.Controllers.SimilarPlayerController",
     "Method": "GetCareerRecommendations",
     "RelativePath": "api/similarplayer/career/{playerId}",

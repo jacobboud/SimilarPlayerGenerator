@@ -1010,6 +1010,240 @@ namespace NBASimilarPlayerGenerator.Services
                 : new List<int>();
         }
 
+        // ---------- Public API: GOAT Ranking ----------
+
+        public GoatResponse CalculateGoatScores(GoatRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var mode = (request.Mode ?? "career").Trim().ToLowerInvariant();
+            if (mode != "career" && mode != "season")
+            {
+                mode = "career";
+            }
+
+            int page = request.Page <= 0 ? 1 : request.Page;
+            int pageSize = request.PageSize <= 0 ? 25 : request.PageSize;
+            pageSize = Math.Min(pageSize, 200); // hard cap to avoid silly sizes
+
+            var rawWeights = request.Weights ?? new Dictionary<string, double>();
+            var weights = rawWeights
+                .Where(kvp => !double.IsNaN(kvp.Value) && kvp.Value != 0.0)
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
+
+            // If no weights, nothing meaningful to compute
+            if (!weights.Any())
+            {
+                return new GoatResponse
+                {
+                    Page = 1,
+                    PageSize = pageSize,
+                    TotalCount = 0,
+                    TotalPages = 0,
+                    Players = new List<GoatPlayerResult>()
+                };
+            }
+
+            var results = new List<GoatPlayerResult>();
+
+            if (mode == "season")
+            {
+                foreach (var rowDyn in _seasonRows)
+                {
+                    var row = (IDictionary<string, object?>)rowDyn;
+
+                    var playerId = row["player_id"]?.ToString()?.Trim();
+                    var seasonStr = row["season"]?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(playerId) || string.IsNullOrWhiteSpace(seasonStr))
+                        continue;
+
+                    if (!int.TryParse(seasonStr, out var season))
+                        continue;
+
+                    double score = 0;
+                    bool hasContribution = false;
+
+                    foreach (var kvp in weights)
+                    {
+                        var statKey = kvp.Key;
+                        var weight = kvp.Value;
+
+                        if (!row.ContainsKey(statKey))
+                            continue;
+
+                        if (TryGetNumericOrBool(row[statKey], out var val))
+                        {
+                            score += val * weight;
+                            hasContribution = true;
+                        }
+                    }
+
+                    // Skip rows that had no overlap with the chosen stats
+                    if (!hasContribution)
+                        continue;
+
+                    _players.TryGetValue(playerId, out var basePlayer);
+                    var name = basePlayer?.Name ?? row["player"]?.ToString() ?? playerId;
+                    var years = season.ToString();
+
+                    string? team = null;
+                    if (row.ContainsKey("team"))
+                    {
+                        team = row["team"]?.ToString();
+                    }
+
+                    // Collect all numeric stats for later display in the UI
+                    var statsDict = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var kvp in row)
+                    {
+                        if (TryGetNumericOrBool(kvp.Value, out var v))
+                        {
+                            statsDict[kvp.Key] = v;
+                        }
+                    }
+
+                    var teams = new List<string>();
+                    if (!string.IsNullOrWhiteSpace(team))
+                    {
+                        teams.Add(team);
+                    }
+
+                    results.Add(new GoatPlayerResult
+                    {
+                        PlayerId = playerId,
+                        Name = name ?? playerId,
+                        Years = years,
+                        Teams = teams,
+                        Season = season,
+                        GoatScore = score,
+                        Stats = statsDict
+                    });
+                }
+            }
+            else
+            {
+                // Career mode
+                foreach (var rowDyn in _careerRows)
+                {
+                    var row = (IDictionary<string, object?>)rowDyn;
+
+                    var playerId = row["player_id"]?.ToString()?.Trim();
+                    if (string.IsNullOrWhiteSpace(playerId))
+                        continue;
+
+                    double score = 0;
+                    bool hasContribution = false;
+
+                    foreach (var kvp in weights)
+                    {
+                        var statKey = kvp.Key;
+                        var weight = kvp.Value;
+
+                        if (!row.ContainsKey(statKey))
+                            continue;
+
+                        if (TryGetNumericOrBool(row[statKey], out var val))
+                        {
+                            score += val * weight;
+                            hasContribution = true;
+                        }
+                    }
+
+                    if (!hasContribution)
+                        continue;
+
+                    _players.TryGetValue(playerId, out var basePlayer);
+                    var name = basePlayer?.Name ?? row["player"]?.ToString() ?? playerId;
+
+                    string years;
+                    if (basePlayer?.Years is { Length: > 0 })
+                    {
+                        years = basePlayer.Years;
+                    }
+                    else
+                    {
+                        var fromSeasonStr = row["from_season"]?.ToString();
+                        var toSeasonStr = row["to_season"]?.ToString();
+                        years = $"{fromSeasonStr}-{toSeasonStr}";
+                    }
+
+                    List<string> teams;
+                    if (basePlayer?.Teams != null && basePlayer.Teams.Any())
+                    {
+                        teams = basePlayer.Teams;
+                    }
+                    else
+                    {
+                        var teamsStr = row["teams"]?.ToString();
+                        teams = string.IsNullOrWhiteSpace(teamsStr)
+                            ? new List<string>()
+                            : teamsStr
+                                .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(t => t.Trim())
+                                .Where(t => t.Length > 0)
+                                .Distinct()
+                                .ToList();
+                    }
+
+                    var statsDict = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var kvp in row)
+                    {
+                        if (TryGetNumericOrBool(kvp.Value, out var v))
+                        {
+                            statsDict[kvp.Key] = v;
+                        }
+                    }
+
+                    results.Add(new GoatPlayerResult
+                    {
+                        PlayerId = playerId,
+                        Name = name ?? playerId,
+                        Years = years,
+                        Teams = teams,
+                        Season = null,
+                        GoatScore = score,
+                        Stats = statsDict
+                    });
+                }
+            }
+
+            // Sort & paginate
+            var ordered = results.OrderByDescending(r => r.GoatScore).ToList();
+            var totalCount = ordered.Count;
+            var totalPages = totalCount == 0
+                ? 0
+                : (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            if (totalPages == 0)
+            {
+                return new GoatResponse
+                {
+                    Page = 1,
+                    PageSize = pageSize,
+                    TotalCount = 0,
+                    TotalPages = 0,
+                    Players = new List<GoatPlayerResult>()
+                };
+            }
+
+            if (page > totalPages)
+                page = totalPages;
+
+            var skip = (page - 1) * pageSize;
+            var pageItems = ordered.Skip(skip).Take(pageSize).ToList();
+
+            return new GoatResponse
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                Players = pageItems
+            };
+        }
+
         private static bool TryGetNumericOrBool(object? raw, out double value)
         {
             value = 0;

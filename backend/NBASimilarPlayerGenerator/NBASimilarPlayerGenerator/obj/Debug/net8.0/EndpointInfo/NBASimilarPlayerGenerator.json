@@ -5,6 +5,37 @@
     "version": "1.0"
   },
   "paths": {
+    "/api/goat": {
+      "post": {
+        "tags": [
+          "Goat"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoatRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoatRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/similarplayer/players": {
       "get": {
         "tags": [
@@ -148,5 +179,35 @@
       }
     }
   },
-  "components": { }
+  "components": {
+    "schemas": {
+      "GoatRequest": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "nullable": true
+          },
+          "weights": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
 }

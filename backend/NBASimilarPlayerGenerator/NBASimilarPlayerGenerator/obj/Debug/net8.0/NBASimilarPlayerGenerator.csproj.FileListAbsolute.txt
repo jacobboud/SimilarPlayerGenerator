@@ -117,3 +117,4 @@ C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\N
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\publish\publish\publish\NBASimilarPlayerGenerator.runtimeconfig.json
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\publish\publish\publish\NBASimilarPlayerGenerator.staticwebassets.endpoints.json
 C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\bin\Debug\net8.0\publish\publish\publish\publish\season_recommendations.json
+C:\Users\jacob\OneDrive\Documents\TheNBAAnalyst\SimilarPlayerGenerator\backend\NBASimilarPlayerGenerator\NBASimilarPlayerGenerator\obj\Debug\net8.0\swae.build.ex.cache

@@ -718,7 +718,7 @@ export default function SimilarPlayerGenerator() {
                   checked={groupsPreset === "custom"}
                   onChange={() => setGroupsPreset("custom")}
                 />{" "}
-                Custom selection
+                Custom
               </label>
             </div>
 

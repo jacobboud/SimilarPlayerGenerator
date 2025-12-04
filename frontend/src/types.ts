@@ -17,3 +17,23 @@ export interface RecommendationResult {
   players: Player[];
   warnings: string[];
 }
+
+export type GoatMode = "career" | "season";
+
+export interface GoatPlayerResult {
+  playerId: string;
+  name: string;
+  years: string;
+  teams?: string[];
+  season?: number | null;
+  goatScore: number;
+  stats: Record<string, number>;
+}
+
+export interface GoatResponse {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  players: GoatPlayerResult[];
+}

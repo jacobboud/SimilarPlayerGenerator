@@ -22,6 +22,8 @@ namespace NBASimilarPlayerGenerator.Services
         RecommendationResult GetCareerRecommendations(
             string playerId,
             RecommendationOptions options);
+
+        GoatResponse CalculateGoatScores(GoatRequest request);
     }
 
     public class RecommendationOptions
