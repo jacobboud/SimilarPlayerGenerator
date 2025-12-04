@@ -1,13 +1,15 @@
-// App.tsx
-import { useState } from "react";
+// src/App.tsx
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  NavLink,
+} from "react-router-dom";
 import SimilarPlayerGenerator from "./components/SimilarPlayerGenerator";
 import GoatPage from "./components/GoatPage";
+import HomePage from "./components/HomePage";
 
 function App() {
-  const [activePage, setActivePage] = useState<"similarity" | "goat">(
-    "similarity"
-  );
-
   return (
     <div
       style={{
@@ -18,71 +20,109 @@ function App() {
         boxSizing: "border-box",
       }}
     >
-      {/* Simple top nav */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "8px",
-          padding: "12px 16px",
-          borderBottom: "1px solid var(--color-border)",
-          backgroundColor: "var(--color-surface)",
-        }}
-      >
-        <button
-          onClick={() => setActivePage("similarity")}
+      <Router>
+        {/* Top nav */}
+        <header
           style={{
-            padding: "6px 12px",
-            borderRadius: "4px",
-            border: "1px solid var(--color-border)",
-            backgroundColor:
-              activePage === "similarity"
-                ? "var(--color-primary)"
-                : "var(--color-surface)",
-            color:
-              activePage === "similarity"
-                ? "var(--color-primary-contrast)"
-                : "var(--color-text-primary)",
-            cursor: "pointer",
+            borderBottom: "1px solid var(--color-border)",
+            backgroundColor: "var(--color-surface)",
           }}
         >
-          Similarity
-        </button>
-        <button
-          onClick={() => setActivePage("goat")}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "4px",
-            border: "1px solid var(--color-border)",
-            backgroundColor:
-              activePage === "goat"
-                ? "var(--color-primary)"
-                : "var(--color-surface)",
-            color:
-              activePage === "goat"
-                ? "var(--color-primary-contrast)"
-                : "var(--color-text-primary)",
-            cursor: "pointer",
-          }}
-        >
-          GOAT
-        </button>
-      </div>
+          <div
+            style={{
+              maxWidth: "1000px",
+              margin: "0 auto",
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <div style={{ fontWeight: 700 }}>Basketball Analytics Lab</div>
+            <nav
+              style={{
+                display: "flex",
+                gap: "8px",
+              }}
+            >
+              <NavLink
+                to="/"
+                end
+                style={({ isActive }) => ({
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--color-border)",
+                  backgroundColor: isActive
+                    ? "var(--color-primary)"
+                    : "var(--color-surface)",
+                  color: isActive
+                    ? "var(--color-primary-contrast)"
+                    : "var(--color-text-primary)",
+                  textDecoration: "none",
+                  fontSize: "0.9rem",
+                })}
+              >
+                Home
+              </NavLink>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "flex-start",
-          padding: "2rem 1rem",
-        }}
-      >
-        {activePage === "similarity" ? (
-          <SimilarPlayerGenerator />
-        ) : (
-          <GoatPage />
-        )}
-      </div>
+              <NavLink
+                to="/similarity"
+                style={({ isActive }) => ({
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--color-border)",
+                  backgroundColor: isActive
+                    ? "var(--color-primary)"
+                    : "var(--color-surface)",
+                  color: isActive
+                    ? "var(--color-primary-contrast)"
+                    : "var(--color-text-primary)",
+                  textDecoration: "none",
+                  fontSize: "0.9rem",
+                })}
+              >
+                Similarity
+              </NavLink>
+
+              <NavLink
+                to="/goat"
+                style={({ isActive }) => ({
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--color-border)",
+                  backgroundColor: isActive
+                    ? "var(--color-primary)"
+                    : "var(--color-surface)",
+                  color: isActive
+                    ? "var(--color-primary-contrast)"
+                    : "var(--color-text-primary)",
+                  textDecoration: "none",
+                  fontSize: "0.9rem",
+                })}
+              >
+                GOAT
+              </NavLink>
+            </nav>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            padding: "2rem 1rem",
+          }}
+        >
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/similarity" element={<SimilarPlayerGenerator />} />
+            <Route path="/goat" element={<GoatPage />} />
+          </Routes>
+        </main>
+      </Router>
     </div>
   );
 }

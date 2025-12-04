@@ -104,9 +104,9 @@ export default function SimilarPlayerGenerator() {
   const handleSearch = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}players?query=${encodeURIComponent(
-          query
-        )}`
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }similarplayer/players?query=${encodeURIComponent(query)}`
       );
       setSearchResults(res.data);
       setSelectedPlayer(null);
@@ -127,7 +127,9 @@ export default function SimilarPlayerGenerator() {
       setSelectedPlayer(player);
       setSearchResults([]);
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}seasons/${player.playerId}`
+        `${import.meta.env.VITE_API_BASE_URL}similarplayer/seasons/${
+          player.playerId
+        }`
       );
       setSeasons(res.data);
       setRecommendations([]);
@@ -185,11 +187,11 @@ export default function SimilarPlayerGenerator() {
 
     let url: string;
     if (useSeason) {
-      url = `${import.meta.env.VITE_API_BASE_URL}season/${
+      url = `${import.meta.env.VITE_API_BASE_URL}similarplayer/season/${
         selectedPlayer.playerId
       }/${selectedSeason}?${params}`;
     } else {
-      url = `${import.meta.env.VITE_API_BASE_URL}career/${
+      url = `${import.meta.env.VITE_API_BASE_URL}similarplayer/career/${
         selectedPlayer.playerId
       }?${params}`;
     }

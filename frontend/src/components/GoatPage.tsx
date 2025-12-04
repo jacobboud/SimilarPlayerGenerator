@@ -3,8 +3,89 @@ import axios from "axios";
 import { STAT_GROUP_CONFIG, STAT_LABELS } from "../statsConfig";
 import { GoatMode, GoatPlayerResult, GoatResponse } from "../types";
 
-type WeightMap = Record<string, string>; // string for inputs
+type WeightMap = Record<string, string>; // string for inputs, keyed by season stat keys
 type NumericWeightMap = Record<string, number>;
+
+// --- Award denormalization helpers (same idea as SimilarPlayerGenerator) ---
+
+type StatMode = "career" | "season";
+
+function denormalizeCumulativeChain(
+  stats: Record<string, number>,
+  keys: string[]
+) {
+  // keys are in order: [1st, 2nd, 3rd, ORV] or [1st, 2nd, ORV]
+  const values = keys.map((k) => stats[k] ?? 0);
+  const result: number[] = [];
+
+  for (let i = 0; i < values.length; i++) {
+    if (i === 0) {
+      result[i] = values[i];
+    } else {
+      result[i] = values[i] - values[i - 1];
+    }
+    if (result[i] < 0) result[i] = 0; // safety
+  }
+
+  keys.forEach((k, i) => {
+    stats[k] = result[i];
+  });
+}
+
+function transformStatsForDisplay(
+  raw: Record<string, number>,
+  mode: StatMode
+): Record<string, number> {
+  const stats = { ...raw }; // don't mutate original
+
+  if (mode === "season") {
+    // All-NBA 1 / 2 / 3 / ORV
+    denormalizeCumulativeChain(stats, [
+      "all_nba_1T",
+      "all_nba_2T",
+      "all_nba_3T",
+      "all_nba_ORV",
+    ]);
+
+    // All-Defense 1st / 2nd / ORV
+    denormalizeCumulativeChain(stats, [
+      "all_defense_1st",
+      "all_defense_2nd",
+      "all_defense_ORV",
+    ]);
+
+    // All-Rookie 1st / 2nd / ORV
+    denormalizeCumulativeChain(stats, [
+      "all_rookie_1st",
+      "all_rookie_2nd",
+      "all_rookie_ORV",
+    ]);
+  } else {
+    // CAREER versions (counts)
+    denormalizeCumulativeChain(stats, [
+      "career_all_nba_1T_count",
+      "career_all_nba_2T_count",
+      "career_all_nba_3T_count",
+      "career_all_nba_ORV_count",
+    ]);
+
+    denormalizeCumulativeChain(stats, [
+      "career_all_defense_1st_count",
+      "career_all_defense_2nd_count",
+      "career_all_defense_ORV_count",
+    ]);
+
+    denormalizeCumulativeChain(stats, [
+      "career_all_rookie_1st_count",
+      "career_all_rookie_2nd_count",
+      "career_all_rookie_ORV_count",
+    ]);
+  }
+
+  return stats;
+}
+
+// --- Component ---
 
 export default function GoatPage() {
   const [mode, setMode] = useState<GoatMode>("career");
@@ -12,8 +93,8 @@ export default function GoatPage() {
     STAT_GROUP_CONFIG[0]?.label ?? "Per Game"
   );
 
-  const [careerWeights, setCareerWeights] = useState<WeightMap>({});
-  const [seasonWeights, setSeasonWeights] = useState<WeightMap>({});
+  // Single canonical weight map (keyed by SEASON stat keys)
+  const [weightInputs, setWeightInputs] = useState<WeightMap>({});
 
   const [results, setResults] = useState<GoatPlayerResult[]>([]);
   const [page, setPage] = useState(1);
@@ -26,39 +107,55 @@ export default function GoatPage() {
     Record<string, boolean>
   >({});
 
+  // This stores the weights actually sent to the backend (career_* or season keys)
   const [lastWeightsUsed, setLastWeightsUsed] =
     useState<NumericWeightMap | null>(null);
+
+  const DEFAULT_FORMULA: NumericWeightMap = {
+    pts: 0.002,
+    trb: 0.004,
+    ast: 0.004,
+    stl: 0.008,
+    blk: 0.008,
+    CHMP: 7.5,
+    FMVP: 7.5,
+    all_star: 1,
+    all_nba_1T: 5,
+    all_nba_2T: 3,
+    all_nba_3T: 2,
+    all_defense_1st: 2,
+    all_defense_2nd: 2,
+    mvp_winner: 15,
+    dpoy_winner: 3,
+  };
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const currentWeights = mode === "career" ? careerWeights : seasonWeights;
-  const setCurrentWeights =
-    mode === "career" ? setCareerWeights : setSeasonWeights;
+  // input for jumping directly to a page
+  const [pageInput, setPageInput] = useState<string>("");
+  const [showDefaultImportedMsg, setShowDefaultImportedMsg] = useState(false);
 
   const currentGroup = STAT_GROUP_CONFIG.find(
     (g) => g.label === activeGroupLabel
   );
 
-  const currentGroupKeys =
-    currentGroup == null
-      ? []
-      : mode === "career"
-      ? currentGroup.careerKeys
-      : currentGroup.seasonKeys;
+  // For the editor, we treat SEASON keys as the canonical ones to attach weights to.
+  const currentGroupSeasonKeys = currentGroup?.seasonKeys ?? [];
 
   function handleWeightChange(statKey: string, value: string) {
-    setCurrentWeights((prev) => ({
+    // statKey here is always a SEASON stat key (canonical for weights)
+    setWeightInputs((prev) => ({
       ...prev,
       [statKey]: value,
     }));
   }
 
-  function buildNumericWeights(): NumericWeightMap {
-    const source = currentWeights;
+  // Build numeric canonical weights keyed by SEASON stat keys.
+  function buildCanonicalNumericWeights(): NumericWeightMap {
     const numeric: NumericWeightMap = {};
 
-    Object.entries(source).forEach(([key, value]) => {
+    Object.entries(weightInputs).forEach(([key, value]) => {
       if (value === "" || value == null) return;
       const num = parseFloat(value);
       if (!Number.isNaN(num) && num !== 0) {
@@ -69,13 +166,63 @@ export default function GoatPage() {
     return numeric;
   }
 
+  function importDefaultFormula() {
+    setWeightInputs((prev) => {
+      const updated: WeightMap = { ...prev };
+
+      Object.entries(DEFAULT_FORMULA).forEach(([key, value]) => {
+        updated[key] = String(value); // convert number → string for inputs
+      });
+
+      return updated;
+    });
+
+    setShowDefaultImportedMsg(true);
+    // Optional: hide after 2.5s
+    setTimeout(() => {
+      setShowDefaultImportedMsg(false);
+    }, 2500);
+  }
+
+  // Convert canonical (season-keyed) weights into backend stat keys:
+  // - For season mode → same season keys.
+  // - For career mode → matching career_* keys at the same index in STAT_GROUP_CONFIG.
+  function buildBackendWeights(
+    canonical: NumericWeightMap,
+    modeToUse: GoatMode
+  ): NumericWeightMap {
+    const backend: NumericWeightMap = {};
+
+    STAT_GROUP_CONFIG.forEach((group) => {
+      const seasonKeys = group.seasonKeys;
+      const careerKeys = group.careerKeys;
+
+      seasonKeys.forEach((seasonKey, idx) => {
+        const w = canonical[seasonKey];
+        if (w == null || Number.isNaN(w) || w === 0) return;
+
+        let backendKey: string;
+        if (modeToUse === "season") {
+          backendKey = seasonKey;
+        } else {
+          // Career mode: map to corresponding career key if available, otherwise fall back.
+          backendKey = careerKeys[idx] ?? seasonKey;
+        }
+
+        backend[backendKey] = w;
+      });
+    });
+
+    return backend;
+  }
+
   async function fetchGoatPage(
     targetPage: number,
     targetPageSize: number,
     modeToUse: GoatMode,
-    weights: NumericWeightMap
+    backendWeights: NumericWeightMap
   ) {
-    if (Object.keys(weights).length === 0) {
+    if (Object.keys(backendWeights).length === 0) {
       setResults([]);
       setTotalPages(0);
       setTotalCount(0);
@@ -96,7 +243,7 @@ export default function GoatPage() {
           mode: modeToUse,
           page: targetPage,
           pageSize: targetPageSize,
-          weights,
+          weights: backendWeights,
         }
       );
 
@@ -106,6 +253,7 @@ export default function GoatPage() {
       setPageSize(data.pageSize);
       setTotalPages(data.totalPages);
       setTotalCount(data.totalCount);
+      setPageInput(String(data.page)); // keep jump input in sync
     } catch (err) {
       console.error("GOAT calculation failed:", err);
       setErrorMsg("Something went wrong calculating GOAT scores.");
@@ -118,9 +266,17 @@ export default function GoatPage() {
   }
 
   async function handleCalculate() {
-    const weights = buildNumericWeights();
-    setLastWeightsUsed(weights);
-    await fetchGoatPage(1, pageSize, mode, weights);
+    // 1) Build canonical weights (season-keyed)
+    const canonical = buildCanonicalNumericWeights();
+
+    // 2) Convert to backend keys for current mode
+    const backendWeights = buildBackendWeights(canonical, mode);
+
+    // 3) Remember what we actually used (for filtering stats later)
+    setLastWeightsUsed(backendWeights);
+
+    // 4) Fetch page 1
+    await fetchGoatPage(1, pageSize, mode, backendWeights);
   }
 
   async function goToPage(newPage: number) {
@@ -134,6 +290,21 @@ export default function GoatPage() {
     setPageSize(clamped);
     if (!lastWeightsUsed) return;
     await fetchGoatPage(1, clamped, mode, lastWeightsUsed);
+  }
+
+  async function handleJumpToPage() {
+    if (!lastWeightsUsed) return;
+    if (!pageInput) return;
+    const parsed = parseInt(pageInput, 10);
+    if (
+      Number.isNaN(parsed) ||
+      parsed < 1 ||
+      (totalPages > 0 && parsed > totalPages)
+    ) {
+      setErrorMsg(`Please enter a page between 1 and ${totalPages || 1}.`);
+      return;
+    }
+    await fetchGoatPage(parsed, pageSize, mode, lastWeightsUsed);
   }
 
   function toggleRow(rowKey: string) {
@@ -154,16 +325,19 @@ export default function GoatPage() {
     player: GoatPlayerResult,
     showOnlyWeighted: boolean
   ) {
-    const stats = player.stats;
-    if (!stats) return null;
-    if (Object.keys(stats).length === 0) return null;
+    const rawStats = player.stats;
+    if (!rawStats) return null;
+    if (Object.keys(rawStats).length === 0) return null;
+
+    const modeForPlayer: StatMode = player.season != null ? "season" : "career";
+
+    // Use the same denormalization as SimilarPlayerGenerator for display
+    const stats = transformStatsForDisplay(rawStats, modeForPlayer);
 
     const weightedKeysSet: Set<string> | null =
       showOnlyWeighted && lastWeightsUsed
         ? new Set(Object.keys(lastWeightsUsed).filter((k) => k in stats))
         : null;
-
-    const modeForPlayer: GoatMode = player.season != null ? "season" : "career";
 
     return (
       <>
@@ -203,12 +377,36 @@ export default function GoatPage() {
                 {availableKeys.map((k) => {
                   const label = STAT_LABELS[k] ?? k;
                   const value = stats[k];
+                  const hasNumericValue = Number.isFinite(value);
+                  const valueStr = hasNumericValue
+                    ? (value as number).toFixed(3).replace(/\.?0+$/, "")
+                    : String(value);
+
+                  // Breakdown value × weight = contribution, only in "stats used" view
+                  const weight =
+                    showOnlyWeighted && lastWeightsUsed
+                      ? lastWeightsUsed[k]
+                      : undefined;
+
+                  let breakdown: string | null = null;
+                  if (
+                    showOnlyWeighted &&
+                    weight != null &&
+                    hasNumericValue &&
+                    Number.isFinite(weight)
+                  ) {
+                    const contrib = (value as number) * weight;
+                    const weightStr = (weight as number)
+                      .toFixed(3)
+                      .replace(/\.?0+$/, "");
+                    const contribStr = contrib.toFixed(3).replace(/\.?0+$/, "");
+                    breakdown = `${valueStr} × ${weightStr} = ${contribStr}`;
+                  }
+
                   return (
                     <div key={k}>
                       <strong>{label}:</strong>{" "}
-                      {Number.isFinite(value)
-                        ? value.toFixed(3).replace(/\.?0+$/, "")
-                        : value}
+                      {breakdown ? breakdown : valueStr}
                     </div>
                   );
                 })}
@@ -240,66 +438,16 @@ export default function GoatPage() {
         GOAT Ranking Engine
       </h1>
 
-      {/* Mode selector */}
-      <div
-        style={{
-          marginTop: "24px",
-          marginBottom: "16px",
-          display: "flex",
-          justifyContent: "center",
-          gap: "8px",
-        }}
-      >
-        <button
-          onClick={() => setMode("career")}
-          style={{
-            padding: "8px 16px",
-            borderRadius: "4px",
-            border: "1px solid var(--color-border)",
-            backgroundColor:
-              mode === "career"
-                ? "var(--color-primary)"
-                : "var(--color-surface)",
-            color:
-              mode === "career"
-                ? "var(--color-primary-contrast)"
-                : "var(--color-text-primary)",
-            cursor: "pointer",
-          }}
-        >
-          Career GOAT
-        </button>
-        <button
-          onClick={() => setMode("season")}
-          style={{
-            padding: "8px 16px",
-            borderRadius: "4px",
-            border: "1px solid var(--color-border)",
-            backgroundColor:
-              mode === "season"
-                ? "var(--color-primary)"
-                : "var(--color-surface)",
-            color:
-              mode === "season"
-                ? "var(--color-primary-contrast)"
-                : "var(--color-text-primary)",
-            cursor: "pointer",
-          }}
-        >
-          Season GOAT
-        </button>
-      </div>
-
       <div
         style={{
           maxWidth: "900px",
           margin: "0 auto",
-          textAlign: "left",
+          textAlign: "center",
         }}
       >
         <p style={{ color: "var(--color-text-muted)", fontSize: "0.95rem" }}>
           Assign point values to any stats you care about. GOAT score = Σ (stat
-          value × your weight). No standardization, just pure counting chaos.
+          value × your weight).
         </p>
       </div>
 
@@ -316,9 +464,50 @@ export default function GoatPage() {
           padding: "16px",
         }}
       >
-        <h2 style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
-          Step 1: Build your GOAT Formula
-        </h2>
+        {/* Header + Import button */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "10px",
+            flexWrap: "wrap",
+          }}
+        >
+          <h2 style={{ fontSize: "1.2rem", margin: 0 }}>
+            Step 1: Build your GOAT Formula
+          </h2>
+          <button
+            onClick={importDefaultFormula}
+            style={{
+              padding: "8px 14px",
+              borderRadius: "4px",
+              border: "none",
+              backgroundColor: "var(--color-primary)", // ⬅ stands out
+              color: "var(--color-primary-contrast)",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+              fontWeight: 600,
+              boxShadow: "var(--shadow-elevated)", // optional extra pop
+            }}
+          >
+            Import Default Formula
+          </button>
+        </div>
+
+        {showDefaultImportedMsg && (
+          <div
+            style={{
+              marginBottom: "10px",
+              fontSize: "0.9rem",
+              color: "var(--color-success)",
+              textAlign: "left",
+            }}
+          >
+            Default Formula Imported!
+          </div>
+        )}
 
         {/* Tabs for groups */}
         <div
@@ -354,7 +543,7 @@ export default function GoatPage() {
           ))}
         </div>
 
-        {/* Inputs for current group */}
+        {/* Inputs for current group (using SEASON keys as canonical) */}
         <div
           style={{
             border: "1px solid var(--color-border)",
@@ -373,8 +562,7 @@ export default function GoatPage() {
                   fontWeight: 700,
                 }}
               >
-                {currentGroup.label} ({mode === "career" ? "Career" : "Season"}{" "}
-                stats)
+                {currentGroup.label}
               </h3>
               <p
                 style={{
@@ -393,9 +581,9 @@ export default function GoatPage() {
                   gap: "10px",
                 }}
               >
-                {currentGroupKeys.map((statKey) => {
+                {currentGroupSeasonKeys.map((statKey) => {
                   const label = STAT_LABELS[statKey] ?? statKey;
-                  const value = currentWeights[statKey] ?? "";
+                  const value = weightInputs[statKey] ?? "";
                   return (
                     <div key={statKey}>
                       <label
@@ -407,13 +595,15 @@ export default function GoatPage() {
                         }}
                       >
                         <span>
-                          <strong>{label}</strong>{" "}
+                          <strong>{label}</strong> <br />
                           <span
                             style={{
                               color: "var(--color-text-muted)",
                               fontSize: "0.8rem",
                             }}
-                          ></span>
+                          >
+                            ({statKey})
+                          </span>
                         </span>
                         <input
                           type="number"
@@ -428,6 +618,7 @@ export default function GoatPage() {
                             border: "1px solid var(--color-border)",
                             backgroundColor: "var(--color-bg)",
                             color: "var(--color-text-primary)",
+                            textAlign: "center",
                           }}
                         />
                       </label>
@@ -448,15 +639,54 @@ export default function GoatPage() {
           Step 2: Calculate GOAT Scores
         </h2>
 
+        {/* Mode selector (only affects which dataset we calculate on) */}
         <div
           style={{
-            marginBottom: "10px",
-            color: "var(--color-text-muted)",
+            marginTop: "24px",
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "center",
+            gap: "8px",
           }}
         >
-          {mode === "career"
-            ? "Ranking full careers across NBA history."
-            : "Ranking individual seasons across NBA history (each player-season is its own entry)."}
+          <button
+            onClick={() => setMode("career")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "4px",
+              border: "1px solid var(--color-border)",
+              backgroundColor:
+                mode === "career"
+                  ? "var(--color-primary)"
+                  : "var(--color-surface)",
+              color:
+                mode === "career"
+                  ? "var(--color-primary-contrast)"
+                  : "var(--color-text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            Careers
+          </button>
+          <button
+            onClick={() => setMode("season")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "4px",
+              border: "1px solid var(--color-border)",
+              backgroundColor:
+                mode === "season"
+                  ? "var(--color-primary)"
+                  : "var(--color-surface)",
+              color:
+                mode === "season"
+                  ? "var(--color-primary-contrast)"
+                  : "var(--color-text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            Seasons
+          </button>
         </div>
 
         <button
@@ -504,7 +734,7 @@ export default function GoatPage() {
             backgroundColor: "var(--color-warning-bg)",
             color: "var(--color-warning-text)",
             fontSize: "0.9rem",
-            textAlign: "left",
+            textAlign: "center",
           }}
         >
           {errorMsg}
@@ -512,7 +742,7 @@ export default function GoatPage() {
       )}
 
       {/* Results */}
-      {results.length > 0 && (
+      {(results.length > 0 || isLoading) && (
         <div style={{ marginTop: "24px" }}>
           <h2 style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
             GOAT Rankings
@@ -525,14 +755,59 @@ export default function GoatPage() {
               color: "var(--color-text-muted)",
             }}
           >
-            Showing {results.length} of {totalCount} result
-            {totalCount === 1 ? "" : "s"}. Page {page} of {totalPages}.
+            {totalPages > 0 ? (
+              <>
+                Showing {results.length} of {totalCount} result
+                {totalCount === 1 ? "" : "s"}. Page{" "}
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  style={{
+                    width: "60px",
+                    padding: "2px 4px",
+                    borderRadius: "4px",
+                    border: "1px solid var(--color-border)",
+                    backgroundColor: "var(--color-bg)",
+                    color: "var(--color-text-primary)",
+                    marginLeft: "4px",
+                    marginRight: "4px",
+                  }}
+                />{" "}
+                of {totalPages}.
+                {/* Show Go only if user changed the value and it's not empty */}
+                {pageInput !== "" &&
+                  pageInput !== String(page) &&
+                  totalPages > 1 && (
+                    <button
+                      onClick={handleJumpToPage}
+                      disabled={isLoading || !lastWeightsUsed}
+                      style={{
+                        marginLeft: "8px",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        border: "1px solid var(--color-border)",
+                        backgroundColor: "var(--color-surface)",
+                        color: "var(--color-text-primary)",
+                        cursor:
+                          isLoading || !lastWeightsUsed ? "default" : "pointer",
+                      }}
+                    >
+                      Go
+                    </button>
+                  )}
+              </>
+            ) : (
+              <>No results yet.</>
+            )}
           </div>
 
           {/* Pagination controls */}
           <div
             style={{
-              marginBottom: "16px",
+              marginBottom: "8px",
               display: "flex",
               justifyContent: "center",
               gap: "8px",
@@ -582,146 +857,166 @@ export default function GoatPage() {
             </button>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-              alignItems: "center",
-            }}
-          >
-            {results.map((player, index) => {
-              const rowKey =
-                mode === "season" && player.season != null
-                  ? `${player.playerId}_${player.season}`
-                  : player.playerId;
+          {/* NEW: small loading indicator ABOVE list, but keep old results visible */}
+          {isLoading && (
+            <div
+              style={{
+                textAlign: "center",
+                fontSize: "0.95rem",
+                color: "var(--color-text-muted)",
+                marginBottom: "8px",
+              }}
+            >
+              Loading...
+            </div>
+          )}
 
-              const isExpanded = expandedRows[rowKey] ?? false;
-              const showAll = showAllStatsRows[rowKey] ?? false;
+          {/* Results list stays rendered during loading */}
+          {results.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+                alignItems: "center",
+              }}
+            >
+              {results.map((player, index) => {
+                const rowKey =
+                  mode === "season" && player.season != null
+                    ? `${player.playerId}_${player.season}`
+                    : player.playerId;
 
-              const teamText =
-                player.teams && player.teams.length > 0
-                  ? player.teams.join(", ")
-                  : "";
+                const isExpanded = expandedRows[rowKey] ?? false;
+                const showAll = showAllStatsRows[rowKey] ?? false;
 
-              const displayYears =
-                mode === "season" && player.season != null
-                  ? `${player.season}`
-                  : player.years;
+                const teamText =
+                  player.teams && player.teams.length > 0
+                    ? player.teams.join(", ")
+                    : "";
 
-              return (
-                <div
-                  key={rowKey + "_" + index}
-                  style={{
-                    backgroundColor: "var(--color-surface)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "8px",
-                    padding: "20px",
-                    width: "90vw",
-                    maxWidth: "700px",
-                    boxShadow: "var(--shadow-elevated)",
-                    textAlign: "left",
-                  }}
-                >
+                const displayYears =
+                  mode === "season" && player.season != null
+                    ? `${player.season}`
+                    : player.years;
+
+                const rank = (page - 1) * pageSize + index + 1;
+
+                return (
                   <div
+                    key={rowKey + "_" + index}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "12px",
-                      flexWrap: "wrap",
+                      backgroundColor: "var(--color-surface)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "8px",
+                      padding: "20px",
+                      width: "90vw",
+                      maxWidth: "700px",
+                      boxShadow: "var(--shadow-elevated)",
+                      textAlign: "left",
                     }}
                   >
-                    <div>
-                      <div>
-                        <strong>{player.name}</strong> ({displayYears})
-                      </div>
-                      {teamText && <div>Team(s): {teamText}</div>}
-                      <div>
-                        GOAT Score:{" "}
-                        {player.goatScore.toFixed(3).replace(/\.?0+$/, "")}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => toggleRow(rowKey)}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "var(--color-success)",
-                        color: "var(--color-primary-contrast)",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {isExpanded ? "Hide Stats" : "See Stats"}
-                    </button>
-                  </div>
-
-                  {isExpanded && (
                     <div
                       style={{
-                        marginTop: "12px",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: "4px",
-                        padding: "14px",
-                        backgroundColor: "var(--color-bg)",
-                        maxHeight: "350px",
-                        overflowY: "auto",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "12px",
+                        flexWrap: "wrap",
                       }}
                     >
-                      <h4
+                      <div>
+                        <div>
+                          <strong>#{rank}</strong>{" "}
+                          <strong>{player.name}</strong> ({displayYears})
+                        </div>
+                        {teamText && <div>Team(s): {teamText}</div>}
+                        <div>
+                          GOAT Score:{" "}
+                          {player.goatScore.toFixed(3).replace(/\.?0+$/, "")}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => toggleRow(rowKey)}
                         style={{
-                          marginBottom: "8px",
-                          fontSize: "1rem",
-                          fontWeight: 700,
+                          padding: "6px 12px",
+                          backgroundColor: "var(--color-success)",
+                          color: "var(--color-primary-contrast)",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
                         }}
                       >
-                        Stats used in GOAT calculation
-                      </h4>
-                      {renderStatGroupsForPlayer(player, true)}
+                        {isExpanded ? "Hide Stats" : "See Stats"}
+                      </button>
+                    </div>
 
+                    {isExpanded && (
                       <div
                         style={{
-                          marginTop: "10px",
-                          textAlign: "center",
+                          marginTop: "12px",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "4px",
+                          padding: "14px",
+                          backgroundColor: "var(--color-bg)",
+                          maxHeight: "350px",
+                          overflowY: "auto",
                         }}
                       >
-                        <button
-                          onClick={() => toggleShowAllStats(rowKey)}
+                        <h4
                           style={{
-                            padding: "6px 12px",
-                            backgroundColor: "var(--color-secondary)",
-                            color: "var(--color-primary-contrast)",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
+                            marginBottom: "8px",
+                            fontSize: "1rem",
+                            fontWeight: 700,
                           }}
                         >
-                          {showAll ? "Hide extra stats" : "See More Stats"}
-                        </button>
-                      </div>
+                          Stats used in GOAT calculation
+                        </h4>
+                        {renderStatGroupsForPlayer(player, true)}
 
-                      {showAll && (
-                        <>
-                          <h4
+                        <div
+                          style={{
+                            marginTop: "10px",
+                            textAlign: "center",
+                          }}
+                        >
+                          <button
+                            onClick={() => toggleShowAllStats(rowKey)}
                             style={{
-                              marginTop: "12px",
-                              marginBottom: "8px",
-                              fontSize: "1rem",
-                              fontWeight: 700,
+                              padding: "6px 12px",
+                              backgroundColor: "var(--color-secondary)",
+                              color: "var(--color-primary-contrast)",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
                             }}
                           >
-                            All available stats
-                          </h4>
-                          {renderStatGroupsForPlayer(player, false)}
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                            {showAll ? "Hide extra stats" : "See More Stats"}
+                          </button>
+                        </div>
+
+                        {showAll && (
+                          <>
+                            <h4
+                              style={{
+                                marginTop: "12px",
+                                marginBottom: "8px",
+                                fontSize: "1rem",
+                                fontWeight: 700,
+                              }}
+                            >
+                              All available stats
+                            </h4>
+                            {renderStatGroupsForPlayer(player, false)}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
