@@ -49,7 +49,7 @@ export default function HomePage() {
             padding: "20px",
             maxWidth: "500px",
             width: "90vw",
-            textAlign: "left",
+            textAlign: "center",
             boxShadow: "var(--shadow-elevated)",
           }}
         >
@@ -84,7 +84,7 @@ export default function HomePage() {
             padding: "20px",
             maxWidth: "500px",
             width: "90vw",
-            textAlign: "left",
+            textAlign: "center",
             boxShadow: "var(--shadow-elevated)",
           }}
         >

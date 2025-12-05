@@ -900,6 +900,7 @@ export default function SimilarPlayerGenerator() {
                   }`;
 
                   const isShown = recStatsShown[key] ?? false;
+                  const rank = index + 1;
 
                   const groupsToShow: GroupName[] =
                     usedGroupsForLastRequest &&
@@ -921,8 +922,10 @@ export default function SimilarPlayerGenerator() {
                       }}
                     >
                       <div>
-                        <strong>{player.name}</strong> ({player.years})
+                        <strong>#{rank}</strong> <strong>{player.name}</strong>{" "}
+                        ({player.years})
                       </div>
+
                       {team && <div>Team(s): {team}</div>}
                       {player.similarityScore != null && (
                         <div>

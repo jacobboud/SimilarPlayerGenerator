@@ -913,32 +913,26 @@ export default function GoatPage() {
                       width: "90vw",
                       maxWidth: "700px",
                       boxShadow: "var(--shadow-elevated)",
-                      textAlign: "left",
+                      textAlign: "center",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                        flexWrap: "wrap",
-                      }}
-                    >
+                    <div>
                       <div>
-                        <div>
-                          <strong>#{rank}</strong>{" "}
-                          <strong>{player.name}</strong> ({displayYears})
-                        </div>
-                        {teamText && <div>Team(s): {teamText}</div>}
-                        <div>
-                          GOAT Score:{" "}
-                          {player.goatScore.toFixed(3).replace(/\.?0+$/, "")}
-                        </div>
+                        <strong>#{rank}</strong> <strong>{player.name}</strong>{" "}
+                        ({displayYears})
                       </div>
+
+                      {teamText && <div>Team(s): {teamText}</div>}
+
+                      <div>
+                        GOAT Score:{" "}
+                        {player.goatScore.toFixed(3).replace(/\.?0+$/, "")}
+                      </div>
+
                       <button
                         onClick={() => toggleRow(rowKey)}
                         style={{
+                          marginTop: "6px",
                           padding: "6px 12px",
                           backgroundColor: "var(--color-success)",
                           color: "var(--color-primary-contrast)",
