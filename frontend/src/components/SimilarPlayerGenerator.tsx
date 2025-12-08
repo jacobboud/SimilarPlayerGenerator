@@ -13,6 +13,8 @@ import { Player, RecommendationResult } from "../types";
 export default function SimilarPlayerGenerator() {
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Player[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [noResultsMessage, setNoResultsMessage] = useState<string | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [seasons, setSeasons] = useState<number[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
@@ -103,11 +105,15 @@ export default function SimilarPlayerGenerator() {
 
   const handleSearch = async () => {
     try {
+      setHasSearched(true);
+      setNoResultsMessage(null);
+
       const res = await axios.get(
         `${
           import.meta.env.VITE_API_BASE_URL
         }similarplayer/players?query=${encodeURIComponent(query)}`
       );
+
       setSearchResults(res.data);
       setSelectedPlayer(null);
       setRecommendations([]);
@@ -117,8 +123,21 @@ export default function SimilarPlayerGenerator() {
       setShowAdvanced(false);
       setStatsTab("career");
       setWarnings([]);
+
+      if (Array.isArray(res.data) && res.data.length === 0) {
+        setNoResultsMessage(
+          `No players found matching "${query}". This might be because:\n` +
+            `• The player is a current rookie (this site doesn’t include 2025–26 stats yet).\n` +
+            `• The player’s name includes accents or special characters (e.g. "Nikola Jokić").\n` +
+            `• The name was misspelled`
+        );
+      }
     } catch (err) {
       console.error("Search failed:", err);
+      setHasSearched(true);
+      setNoResultsMessage(
+        "Something went wrong searching for players. Please try again in a moment."
+      );
     }
   };
 
@@ -126,6 +145,9 @@ export default function SimilarPlayerGenerator() {
     try {
       setSelectedPlayer(player);
       setSearchResults([]);
+      setHasSearched(false);
+      setNoResultsMessage(null);
+
       const res = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}similarplayer/seasons/${
           player.playerId
@@ -501,6 +523,27 @@ export default function SimilarPlayerGenerator() {
               </button>
             </div>
           ))}
+
+          {hasSearched &&
+            !selectedPlayer &&
+            searchResults.length === 0 &&
+            noResultsMessage && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  padding: "10px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--color-border)",
+                  backgroundColor: "var(--color-surface)",
+                  textAlign: "left",
+                  whiteSpace: "pre-line",
+                  fontSize: "0.9rem",
+                  color: "var(--color-text-muted)",
+                }}
+              >
+                {noResultsMessage}
+              </div>
+            )}
         </div>
       </div>
 
