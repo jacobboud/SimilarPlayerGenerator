@@ -1,0 +1,11 @@
+# .NET build artifacts
+backend/NBASimilarPlayerGenerator/NBASimilarPlayerGenerator/bin/
+backend/NBASimilarPlayerGenerator/NBASimilarPlayerGenerator/obj/
+backend/NBASimilarPlayerGenerator/NBASimilarPlayerGenerator/publish/
+backend/NBASimilarPlayerGenerator/.vs/
+
+# In general, any bin/obj across the repo
+**/bin/
+**/obj/
+**/.vs/
+**/publish/
