@@ -12,10 +12,11 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<None Update="stats\**\*.*">
+    <Content Include="stats\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-	</ItemGroup>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="wwwroot\" />
