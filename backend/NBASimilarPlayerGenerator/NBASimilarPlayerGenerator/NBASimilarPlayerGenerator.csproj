@@ -12,9 +12,9 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<Content Include="stats\**\*">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
+		<None Update="stats\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
 	</ItemGroup>
 
 	<ItemGroup>

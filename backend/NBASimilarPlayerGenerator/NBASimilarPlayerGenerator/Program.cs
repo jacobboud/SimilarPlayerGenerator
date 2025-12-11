@@ -17,7 +17,7 @@ builder.Services.AddSwaggerGen();
 // Recommendation Service (Singleton pattern)
 builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
 
-// CORS Policy to allow frontend (on Vite port)
+// CORS Policy to allow frontend (local + deployed)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -48,27 +48,34 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Add security headers middleware
+// Redirect HTTP → HTTPS
+app.UseHttpsRedirection();
+
+// Enable routing
+app.UseRouting();
+
+// Add security / debug headers middleware
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Add("X-Frame-Options", "DENY");
-    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    // Debug header so you can verify this version is deployed
+    context.Response.Headers["X-Debug-App"] = "NBASimilarPlayerApi";
+
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
     // Optional: content security policy (CSP)
-    // context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self';");
+    // context.Response.Headers["Content-Security-Policy"] =
+    //     "default-src 'self'; script-src 'self'; style-src 'self';";
     await next();
 });
 
-// Enable CORS
+// Enable CORS (must be after UseRouting, before MapControllers)
 app.UseCors("AllowFrontend");
-
-// HTTPS redirection
-app.UseHttpsRedirection();
 
 // Authorization (not used yet, but safe to include)
 app.UseAuthorization();
 
-// Enable controllers
+// Map controller endpoints
 app.MapControllers();
 
 app.Run();

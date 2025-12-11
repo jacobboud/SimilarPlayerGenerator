@@ -87,8 +87,22 @@ namespace NBASimilarPlayerGenerator.Services
             try
             {
                 var basePath = Path.Combine(env.ContentRootPath, "stats");
+                Console.WriteLine($"[RecommendationService] basePath = {basePath}");
+
+                if (!Directory.Exists(basePath))
+                {
+                    throw new DirectoryNotFoundException($"Stats folder not found at '{basePath}'.");
+                }
+
                 var seasonsPath = Path.Combine(basePath, "nba_player_seasons.csv");
                 var careersPath = Path.Combine(basePath, "nba_player_careers.csv");
+
+                if (!File.Exists(seasonsPath) || !File.Exists(careersPath))
+                {
+                    throw new FileNotFoundException(
+                        "Required CSVs not found. Expected:\n" +
+                        $"  {seasonsPath}\n  {careersPath}");
+                }
 
                 // Load season + career CSVs (existing)
                 using var readerSeasons = new StreamReader(seasonsPath);
