@@ -15,6 +15,10 @@ namespace NBASimilarPlayerGenerator.Services
         private readonly List<dynamic> _seasonRows;
         private readonly List<dynamic> _careerRows;
 
+        // peaks and starts, keyed by window size N
+        private readonly Dictionary<int, List<dynamic>> _peakRowsByWindow = new();
+        private readonly Dictionary<int, List<dynamic>> _startRowsByWindow = new();
+
         // Lookups
         private readonly Dictionary<string, PlayerDto> _players = new();
         private readonly Dictionary<string, List<int>> _playerSeasons = new();    // playerId -> seasons
@@ -36,15 +40,57 @@ namespace NBASimilarPlayerGenerator.Services
             "Championships", "All-League Teams", "Individual Awards"
         };
 
+        private void LoadPeakCsvs(string basePath)
+        {
+            var files = Directory.GetFiles(basePath, "nba_player_peaks_*.csv");
+            foreach (var path in files)
+            {
+                var fileName = Path.GetFileNameWithoutExtension(path); // nba_player_peaks_4
+                var parts = fileName.Split('_');
+                if (!int.TryParse(parts.Last(), out var windowSize) || windowSize <= 0)
+                    continue;
+
+                using var reader = new StreamReader(path);
+                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+                var rows = csv.GetRecords<dynamic>().ToList();
+
+                if (rows.Count == 0) continue;
+
+                _peakRowsByWindow[windowSize] = rows;
+                Console.WriteLine($"Loaded peaks window N={windowSize} with {rows.Count} rows.");
+            }
+        }
+
+        private void LoadStartCsvs(string basePath)
+        {
+            var files = Directory.GetFiles(basePath, "nba_player_starts_*.csv");
+            foreach (var path in files)
+            {
+                var fileName = Path.GetFileNameWithoutExtension(path); // nba_player_starts_6
+                var parts = fileName.Split('_');
+                if (!int.TryParse(parts.Last(), out var windowSize) || windowSize <= 0)
+                    continue;
+
+                using var reader = new StreamReader(path);
+                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+                var rows = csv.GetRecords<dynamic>().ToList();
+
+                if (rows.Count == 0) continue;
+
+                _startRowsByWindow[windowSize] = rows;
+                Console.WriteLine($"Loaded starts window N={windowSize} with {rows.Count} rows.");
+            }
+        }
+
         public RecommendationService(IWebHostEnvironment env)
         {
             try
             {
-                var basePath = env.ContentRootPath;
+                var basePath = Path.Combine(env.ContentRootPath, "stats");
                 var seasonsPath = Path.Combine(basePath, "nba_player_seasons.csv");
                 var careersPath = Path.Combine(basePath, "nba_player_careers.csv");
 
-                // Load CSVs
+                // Load season + career CSVs (existing)
                 using var readerSeasons = new StreamReader(seasonsPath);
                 using var csvSeasons = new CsvReader(readerSeasons, CultureInfo.InvariantCulture);
                 _seasonRows = csvSeasons.GetRecords<dynamic>().ToList();
@@ -53,13 +99,17 @@ namespace NBASimilarPlayerGenerator.Services
                 using var csvCareers = new CsvReader(readerCareers, CultureInfo.InvariantCulture);
                 _careerRows = csvCareers.GetRecords<dynamic>().ToList();
 
-                // Build feature group dictionaries (same ranges as notebook)
+                // Build feature groups (existing)
                 _seasonFeatureGroups = BuildSeasonFeatureGroups(_seasonRows);
                 _careerFeatureGroups = BuildCareerFeatureGroups(_careerRows);
 
-                // Build player lookups and stat dictionaries
+                // Build player lookups / stat dictionaries (existing)
                 BuildLookupsFromSeasons();
                 BuildLookupsFromCareers();
+
+                // NEW: load peaks and starts
+                LoadPeakCsvs(basePath);
+                LoadStartCsvs(basePath);
 
                 Console.WriteLine("✅ RecommendationService initialized successfully.");
             }
@@ -513,12 +563,62 @@ namespace NBASimilarPlayerGenerator.Services
             }
         }
 
-        private IEnumerable<dynamic> FilterCareerRowsByGroups(
-    Dictionary<string, List<string>> featureGroups,
-    List<string> selectedGroups,
-    Dictionary<string, int> targetNonNullCounts)
+        private static Dictionary<string, double> ExtractNumericStatsFromRow(
+            IDictionary<string, object?> row,
+            params string[] excludedColumns)
         {
-            foreach (var rowDyn in _careerRows)
+            var exclude = new HashSet<string>(excludedColumns ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            var dict = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var kvp in row)
+            {
+                var key = kvp.Key;
+                if (exclude.Contains(key))
+                    continue;
+
+                if (TryGetNumericOrBool(kvp.Value, out var v))
+                {
+                    dict[key] = v;
+                }
+            }
+
+            return dict;
+        }
+
+        private Dictionary<string, int> GetTargetNonNullCountsFromRow(
+            IDictionary<string, object?> targetRow,
+            Dictionary<string, List<string>> featureGroups,
+            List<string> selectedGroups)
+        {
+            var result = new Dictionary<string, int>();
+
+            foreach (var g in selectedGroups)
+            {
+                if (!featureGroups.TryGetValue(g, out var groupCols))
+                    continue;
+
+                int count = 0;
+                foreach (var col in groupCols)
+                {
+                    if (!targetRow.ContainsKey(col)) continue;
+                    if (TryGetNumericOrBool(targetRow[col], out _))
+                        count++;
+                }
+
+                result[g] = count;
+            }
+
+            return result;
+        }
+
+        // Generic row filter (replaces old FilterCareerRowsByGroups)
+        private IEnumerable<dynamic> FilterRowsByGroups(
+            IEnumerable<dynamic> sourceRows,
+            Dictionary<string, List<string>> featureGroups,
+            List<string> selectedGroups,
+            Dictionary<string, int> targetNonNullCounts)
+        {
+            foreach (var rowDyn in sourceRows)
             {
                 var row = (IDictionary<string, object?>)rowDyn;
                 bool keep = true;
@@ -642,6 +742,119 @@ namespace NBASimilarPlayerGenerator.Services
             }
 
             return result;
+        }
+
+        // Services/RecommendationService.cs
+
+        public PlayerDto? GetPeakWindowStats(string playerId, int fromSeason, int toSeason)
+        {
+            if (string.IsNullOrWhiteSpace(playerId))
+                return null;
+
+            if (toSeason < fromSeason)
+                return null;
+
+            int windowSize = toSeason - fromSeason + 1;
+            if (!_peakRowsByWindow.TryGetValue(windowSize, out var rows) || rows.Count == 0)
+                return null;
+
+            var rowDyn = rows.FirstOrDefault(r =>
+            {
+                var row = (IDictionary<string, object?>)r;
+                var pid = row["player_id"]?.ToString()?.Trim();
+                var fromStr = row["from_season"]?.ToString();
+                var toStr = row["to_season"]?.ToString();
+
+                return pid == playerId
+                       && int.TryParse(fromStr, out var fs) && fs == fromSeason
+                       && int.TryParse(toStr, out var ts) && ts == toSeason;
+            });
+
+            if (rowDyn is null)
+                return null;
+
+            var rowDict = (IDictionary<string, object?>)rowDyn;
+
+            // Base info from global lookup if possible
+            _players.TryGetValue(playerId, out var basePlayer);
+
+            var name = basePlayer?.Name ?? rowDict["player"]?.ToString() ?? playerId;
+
+            // window label like "2008-2011"
+            string yearsLabel = $"{fromSeason}-{toSeason}";
+
+            // Teams for this window
+            var teamsStr = rowDict.TryGetValue("teams", out var tVal) ? tVal?.ToString() : null;
+            var teams = string.IsNullOrWhiteSpace(teamsStr)
+                ? basePlayer?.Teams ?? new List<string>()
+                : teamsStr.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                          .Select(t => t.Trim())
+                          .Where(t => t.Length > 0)
+                          .Distinct()
+                          .ToList();
+
+            var stats = ExtractNumericStatsFromRow(rowDict, "player", "player_id", "teams", "from_season", "to_season");
+
+            return new PlayerDto
+            {
+                PlayerId = playerId,
+                Name = name,
+                Years = yearsLabel,
+                Teams = teams,
+                CareerStats = stats
+            };
+        }
+
+        public PlayerDto? GetStartWindowStats(string playerId, int nSeasons)
+        {
+            if (string.IsNullOrWhiteSpace(playerId) || nSeasons <= 0)
+                return null;
+
+            if (!_startRowsByWindow.TryGetValue(nSeasons, out var rows) || rows.Count == 0)
+                return null;
+
+            var rowDyn = rows.FirstOrDefault(r =>
+            {
+                var row = (IDictionary<string, object?>)r;
+                var pid = row["player_id"]?.ToString()?.Trim();
+                return pid == playerId;
+            });
+
+            if (rowDyn is null)
+                return null;
+
+            var rowDict = (IDictionary<string, object?>)rowDyn;
+
+            _players.TryGetValue(playerId, out var basePlayer);
+            var name = basePlayer?.Name ?? rowDict["player"]?.ToString() ?? playerId;
+
+            // We have from_season and to_season in the CSV
+            int.TryParse(rowDict["from_season"]?.ToString(), out var fromSeason);
+            int.TryParse(rowDict["to_season"]?.ToString(), out var toSeason);
+
+            string yearsLabel = (fromSeason > 0 && toSeason > 0)
+                ? $"{fromSeason}-{toSeason}"
+                : $"{nSeasons} seasons (start)";
+
+            var teamsStr = rowDict.TryGetValue("teams", out var tVal) ? tVal?.ToString() : null;
+            var teams = string.IsNullOrWhiteSpace(teamsStr)
+                ? basePlayer?.Teams ?? new List<string>()
+                : teamsStr.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                          .Select(t => t.Trim())
+                          .Where(t => t.Length > 0)
+                          .Distinct()
+                          .ToList();
+
+            var stats = ExtractNumericStatsFromRow(rowDict, "player", "player_id", "teams", "from_season", "to_season");
+
+            return new PlayerDto
+            {
+                PlayerId = playerId,
+                Name = name,
+                Years = yearsLabel,
+                Teams = teams,
+                CareerStats = stats
+            };
         }
 
         // ---------- Public API: Season Recommendations ----------
@@ -909,7 +1122,12 @@ namespace NBASimilarPlayerGenerator.Services
 
             // -------- Now run your existing pipeline using effectiveGroups instead of groupNames --------
 
-            var filteredRows = FilterCareerRowsByGroups(fg, effectiveGroups, GetCareerTargetNonNullCounts(playerId, fg, effectiveGroups));
+            var filteredRows = FilterRowsByGroups(
+                _careerRows,
+                fg,
+                effectiveGroups,
+                GetCareerTargetNonNullCounts(playerId, fg, effectiveGroups)
+            );
             var rowList = filteredRows.ToList();
 
             var featureCols = GetFeatureColumns(fg, effectiveGroups);
@@ -992,6 +1210,410 @@ namespace NBASimilarPlayerGenerator.Services
 
             return result;
         }
+
+        public RecommendationResult GetPeakRecommendations(
+    string playerId,
+    int fromSeason,
+    int toSeason,
+    RecommendationOptions options)
+        {
+            var result = new RecommendationResult();
+
+            if (string.IsNullOrWhiteSpace(playerId))
+            {
+                result.Warnings.Add("Invalid player ID.");
+                return result;
+            }
+
+            if (toSeason < fromSeason)
+            {
+                result.Warnings.Add("End season must be >= start season.");
+                return result;
+            }
+
+            int windowSize = toSeason - fromSeason + 1;
+            if (!_peakRowsByWindow.TryGetValue(windowSize, out var allRows) || allRows.Count == 0)
+            {
+                result.Warnings.Add($"No peak windows available for window size N={windowSize}.");
+                return result;
+            }
+
+            var fg = _careerFeatureGroups;
+
+            // Resolve groups (like career)
+            bool presetMode = options.Groups == null || !options.Groups.Any();
+            List<string> groupNames;
+
+            if (presetMode)
+            {
+                groupNames = ResolveGroups(options, fg);
+            }
+            else
+            {
+                groupNames = options.Groups!;
+            }
+
+            // Find target row for this player + window
+            var targetRowDyn = allRows.FirstOrDefault(r =>
+            {
+                var row = (IDictionary<string, object?>)r;
+                var pid = row["player_id"]?.ToString()?.Trim();
+                var fromStr = row["from_season"]?.ToString();
+                var toStr = row["to_season"]?.ToString();
+
+                return pid == playerId
+                       && int.TryParse(fromStr, out var fs) && fs == fromSeason
+                       && int.TryParse(toStr, out var ts) && ts == toSeason;
+            });
+
+            var playerName = _players.TryGetValue(playerId, out var p) ? p.Name : playerId;
+
+            if (targetRowDyn is null)
+            {
+                result.Warnings.Add(
+                    $"No peak window found for {playerName} from {fromSeason} to {toSeason}. " +
+                    "This usually means that span is not a contiguous block of seasons."
+                );
+                return result;
+            }
+
+            var targetRow = (IDictionary<string, object?>)targetRowDyn;
+
+            // Count usable stats per group for this window
+            var targetCounts = GetTargetNonNullCountsFromRow(targetRow, fg, groupNames);
+
+            var effectiveGroups = new List<string>();
+            foreach (var g in groupNames)
+            {
+                targetCounts.TryGetValue(g, out var count);
+                if (count <= 0)
+                {
+                    result.Warnings.Add(
+                        $"{playerName} has no stats recorded in group '{g}' for this window ({fromSeason}-{toSeason}). Ignoring {g}."
+                    );
+                    continue;
+                }
+                effectiveGroups.Add(g);
+            }
+
+            if (!effectiveGroups.Any())
+            {
+                result.Warnings.Add(
+                    $"No usable stat groups remain for {playerName} in his {fromSeason}-{toSeason} window, so no similar players can be generated."
+                );
+                return result;
+            }
+
+            // Filter candidate rows by coverage
+            var targetCountsEffective = GetTargetNonNullCountsFromRow(targetRow, fg, effectiveGroups);
+            var filteredRows = FilterRowsByGroups(allRows, fg, effectiveGroups, targetCountsEffective).ToList();
+
+            // Build feature matrix
+            var featureCols = GetFeatureColumns(fg, effectiveGroups);
+            int rows = filteredRows.Count;
+            int cols = featureCols.Count;
+
+            var matrix = new double?[rows, cols];
+            var idList = new List<string>(rows);
+
+            for (int i = 0; i < rows; i++)
+            {
+                var drow = (IDictionary<string, object?>)filteredRows[i];
+                var pid = drow["player_id"]?.ToString()?.Trim();
+                var fromStr = drow["from_season"]?.ToString();
+                var toStr = drow["to_season"]?.ToString();
+
+                if (pid == null || !int.TryParse(fromStr, out var fs) || !int.TryParse(toStr, out var ts))
+                    continue;
+
+                var key = $"{pid}|{fs}|{ts}";
+                idList.Add(key);
+
+                for (int j = 0; j < cols; j++)
+                {
+                    var colName = featureCols[j];
+                    if (!drow.ContainsKey(colName))
+                    {
+                        matrix[i, j] = null;
+                        continue;
+                    }
+
+                    if (TryGetNumericOrBool(drow[colName], out var val))
+                        matrix[i, j] = val;
+                    else
+                        matrix[i, j] = null;
+                }
+            }
+
+            var scaled = StandardizeMatrix(matrix);
+            var targetKey = $"{playerId}|{fromSeason}|{toSeason}";
+            var targetIndex = idList.IndexOf(targetKey);
+
+            if (targetIndex < 0)
+            {
+                result.Warnings.Add("Target peak window missing after filtering; no recommendations returned.");
+                return result;
+            }
+
+            var sims = new List<(int RowIndex, string Key, double Score)>();
+            var targetVec = Enumerable.Range(0, cols).Select(c => scaled[targetIndex, c]).ToList();
+
+            for (int i = 0; i < rows; i++)
+            {
+                if (i == targetIndex) continue;
+
+                var otherKey = idList[i];
+                var parts = otherKey.Split('|');
+                var otherPid = parts[0];
+
+                // Drop same player's other windows
+                if (otherPid == playerId) continue;
+
+                var otherVec = Enumerable.Range(0, cols).Select(c => scaled[i, c]).ToList();
+                var sim = CosineSimWithPairwiseDrop(targetVec, otherVec);
+                if (sim.HasValue)
+                {
+                    sims.Add((i, otherKey, sim.Value));
+                }
+            }
+
+            var top = sims
+                .OrderByDescending(s => s.Score)
+                .Take(options.TopN)
+                .ToList();
+
+            foreach (var (rowIndex, key, score) in top)
+            {
+                var parts = key.Split('|');
+                var pid = parts[0];
+                int.TryParse(parts[1], out var fs);
+                int.TryParse(parts[2], out var ts);
+
+                var drow = (IDictionary<string, object?>)filteredRows[rowIndex];
+
+                if (!_players.TryGetValue(pid, out var basePlayer))
+                    continue;
+
+                var labelYears = $"{fs}-{ts}";
+
+                // Teams specifically for this window, fall back to global teams
+                var teamsStr = drow.TryGetValue("teams", out var tVal) ? tVal?.ToString() : null;
+                var teams = string.IsNullOrWhiteSpace(teamsStr)
+                    ? basePlayer.Teams ?? new List<string>()
+                    : teamsStr.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                              .Select(t => t.Trim())
+                              .Where(t => t.Length > 0)
+                              .Distinct()
+                              .ToList();
+
+                var stats = ExtractNumericStatsFromRow(drow, "player", "player_id", "teams", "from_season", "to_season");
+
+                result.Players.Add(new PlayerDto
+                {
+                    PlayerId = pid,
+                    Name = basePlayer.Name,
+                    Years = labelYears,
+                    Teams = teams,
+                    CareerStats = stats,
+                    SimilarityScore = score
+                });
+            }
+
+            return result;
+        }
+
+        public RecommendationResult GetStartRecommendations(
+    string playerId,
+    int nSeasons,
+    RecommendationOptions options)
+        {
+            var result = new RecommendationResult();
+
+            if (string.IsNullOrWhiteSpace(playerId) || nSeasons <= 0)
+            {
+                result.Warnings.Add("Invalid player ID or season count.");
+                return result;
+            }
+
+            if (!_startRowsByWindow.TryGetValue(nSeasons, out var allRows) || allRows.Count == 0)
+            {
+                result.Warnings.Add($"No start windows available for N={nSeasons} seasons.");
+                return result;
+            }
+
+            var fg = _careerFeatureGroups;
+
+            bool presetMode = options.Groups == null || !options.Groups.Any();
+            List<string> groupNames;
+
+            if (presetMode)
+            {
+                groupNames = ResolveGroups(options, fg);
+            }
+            else
+            {
+                groupNames = options.Groups!;
+            }
+
+            // Find target row for this player (first N seasons)
+            var targetRowDyn = allRows.FirstOrDefault(r =>
+            {
+                var row = (IDictionary<string, object?>)r;
+                var pid = row["player_id"]?.ToString()?.Trim();
+                return pid == playerId;
+            });
+
+            var playerName = _players.TryGetValue(playerId, out var p) ? p.Name : playerId;
+
+            if (targetRowDyn is null)
+            {
+                result.Warnings.Add(
+                    $"{playerName} does not have at least {nSeasons} seasons in the dataset.");
+                return result;
+            }
+
+            var targetRow = (IDictionary<string, object?>)targetRowDyn;
+
+            var targetCounts = GetTargetNonNullCountsFromRow(targetRow, fg, groupNames);
+
+            var effectiveGroups = new List<string>();
+            foreach (var g in groupNames)
+            {
+                targetCounts.TryGetValue(g, out var count);
+                if (count <= 0)
+                {
+                    result.Warnings.Add(
+                        $"{playerName} has no stats recorded in group '{g}' in his first {nSeasons} seasons. Ignoring {g}."
+                    );
+                    continue;
+                }
+                effectiveGroups.Add(g);
+            }
+
+            if (!effectiveGroups.Any())
+            {
+                result.Warnings.Add(
+                    $"No usable stat groups remain for {playerName} in his first {nSeasons} seasons, so no similar players can be generated."
+                );
+                return result;
+            }
+
+            var targetCountsEffective = GetTargetNonNullCountsFromRow(targetRow, fg, effectiveGroups);
+            var filteredRows = FilterRowsByGroups(allRows, fg, effectiveGroups, targetCountsEffective).ToList();
+
+            var featureCols = GetFeatureColumns(fg, effectiveGroups);
+            int rows = filteredRows.Count;
+            int cols = featureCols.Count;
+
+            var matrix = new double?[rows, cols];
+            var idList = new List<string>(rows);
+
+            for (int i = 0; i < rows; i++)
+            {
+                var drow = (IDictionary<string, object?>)filteredRows[i];
+                var pid = drow["player_id"]?.ToString()?.Trim();
+                if (pid == null) continue;
+
+                // from/to seasons just for labeling
+                var fromStr = drow["from_season"]?.ToString();
+                var toStr = drow["to_season"]?.ToString();
+                int.TryParse(fromStr, out var fs);
+                int.TryParse(toStr, out var ts);
+
+                var key = $"{pid}|{fs}|{ts}";
+                idList.Add(key);
+
+                for (int j = 0; j < cols; j++)
+                {
+                    var colName = featureCols[j];
+                    if (!drow.ContainsKey(colName))
+                    {
+                        matrix[i, j] = null;
+                        continue;
+                    }
+
+                    if (TryGetNumericOrBool(drow[colName], out var val))
+                        matrix[i, j] = val;
+                    else
+                        matrix[i, j] = null;
+                }
+            }
+
+            var scaled = StandardizeMatrix(matrix);
+            // target key has player's row, but from/to may be used, we can match by pid only
+            var targetIndex = idList.FindIndex(k => k.StartsWith(playerId + "|", StringComparison.OrdinalIgnoreCase));
+
+            if (targetIndex < 0)
+            {
+                result.Warnings.Add("Target start window missing after filtering; no recommendations returned.");
+                return result;
+            }
+
+            var sims = new List<(int RowIndex, string Key, double Score)>();
+            var targetVec = Enumerable.Range(0, cols).Select(c => scaled[targetIndex, c]).ToList();
+
+            for (int i = 0; i < rows; i++)
+            {
+                if (i == targetIndex) continue;
+
+                var otherKey = idList[i];
+                var parts = otherKey.Split('|');
+                var otherPid = parts[0];
+
+                if (otherPid == playerId) continue;
+
+                var otherVec = Enumerable.Range(0, cols).Select(c => scaled[i, c]).ToList();
+                var sim = CosineSimWithPairwiseDrop(targetVec, otherVec);
+                if (sim.HasValue)
+                {
+                    sims.Add((i, otherKey, sim.Value));
+                }
+            }
+
+            var top = sims
+                .OrderByDescending(s => s.Score)
+                .Take(options.TopN)
+                .ToList();
+
+            foreach (var (rowIndex, key, score) in top)
+            {
+                var parts = key.Split('|');
+                var pid = parts[0];
+                int.TryParse(parts[1], out var fs);
+                int.TryParse(parts[2], out var ts);
+
+                var drow = (IDictionary<string, object?>)filteredRows[rowIndex];
+
+                if (!_players.TryGetValue(pid, out var basePlayer))
+                    continue;
+
+                string yearsLabel = (fs > 0 && ts > 0) ? $"{fs}-{ts}" : $"{nSeasons} seasons (start)";
+
+                var teamsStr = drow.TryGetValue("teams", out var tVal) ? tVal?.ToString() : null;
+                var teams = string.IsNullOrWhiteSpace(teamsStr)
+                    ? basePlayer.Teams ?? new List<string>()
+                    : teamsStr.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                              .Select(t => t.Trim())
+                              .Where(t => t.Length > 0)
+                              .Distinct()
+                              .ToList();
+
+                var stats = ExtractNumericStatsFromRow(drow, "player", "player_id", "teams", "from_season", "to_season");
+
+                result.Players.Add(new PlayerDto
+                {
+                    PlayerId = pid,
+                    Name = basePlayer.Name,
+                    Years = yearsLabel,
+                    Teams = teams,
+                    CareerStats = stats,
+                    SimilarityScore = score
+                });
+            }
+
+            return result;
+        }
+
 
         // ---------- Public API: Search / Seasons ----------
 

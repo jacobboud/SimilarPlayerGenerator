@@ -23,6 +23,21 @@ namespace NBASimilarPlayerGenerator.Services
             string playerId,
             RecommendationOptions options);
 
+        // Peak window stats + recommendations
+        PlayerDto? GetPeakWindowStats(string playerId, int fromSeason, int toSeason);
+        RecommendationResult GetPeakRecommendations(
+            string playerId,
+            int fromSeason,
+            int toSeason,
+            RecommendationOptions options);
+
+        // Start-window stats + recommendations
+        PlayerDto? GetStartWindowStats(string playerId, int nSeasons);
+        RecommendationResult GetStartRecommendations(
+            string playerId,
+            int nSeasons,
+            RecommendationOptions options);
+
         GoatResponse CalculateGoatScores(GoatRequest request);
     }
 

@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\controllers\\goatcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\controllers\\goatcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -25,10 +33,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,11 +42,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\appsettings.json",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\appsettings.json",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\appsettings.json",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-12-11T21:57:05.88Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "GoatController.cs",
               "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\GoatController.cs",
               "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Controllers\\GoatController.cs",
@@ -55,19 +72,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "RecommendationService.cs",
-              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
-              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
-              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
-              "RelativeToolTip": "NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
-              "ViewState": "AgIAABsDAAAAAAAAAAAswDQDAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-04T20:49:22.841Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "IRecommendationService.cs",
               "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Services\\IRecommendationService.cs",
               "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Services\\IRecommendationService.cs",
@@ -79,7 +84,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "GoatModels.cs",
               "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\GoatModels.cs",
               "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Models\\GoatModels.cs",
@@ -91,7 +96,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "SimilarPlayerController.cs",
               "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
               "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
@@ -103,7 +108,32 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-04-04T19:17:07.1Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "RecommendationService.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
+              "ViewState": "AgIAABsDAAAAAAAAAAAswDQDAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T20:49:22.841Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
               "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Program.cs",
@@ -112,18 +142,6 @@
               "ViewState": "AgIAABIAAAAAAAAAAAAAACAAAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-04T19:16:46.516Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
-              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
-              "RelativeToolTip": "NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-04-04T19:17:07.1Z"
             }
           ]
         }

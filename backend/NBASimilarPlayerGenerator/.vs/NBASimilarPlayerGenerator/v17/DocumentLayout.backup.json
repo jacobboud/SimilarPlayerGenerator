@@ -3,20 +3,32 @@
   "WorkspaceRootPath": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\controllers\\similarplayercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\controllers\\similarplayercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\services\\recommendationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\services\\recommendationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\services\\irecommendationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\services\\irecommendationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\services\\recommendationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\services\\recommendationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\models\\goatmodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\models\\goatmodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\models\\recommendationresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\models\\recommendationresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\models\\playerdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\models\\playerdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|solutionrelative:nbasimilarplayergenerator\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{543C196D-A888-4B14-AC4D-AE0DE986F5CC}|NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator.csproj|c:\\users\\jacob\\onedrive\\documents\\thenbaanalyst\\similarplayergenerator\\backend\\nbasimilarplayergenerator\\nbasimilarplayergenerator\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
@@ -30,32 +42,58 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "SimilarPlayerController.cs",
-              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
-              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
-              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
-              "RelativeToolTip": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAfAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "PlayerDto.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\PlayerDto.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Models\\PlayerDto.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\PlayerDto.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Models\\PlayerDto.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAxwBsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-04T19:01:07.039Z",
+              "WhenOpened": "2025-12-11T21:26:35.612Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "RecommendationResult.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\RecommendationResult.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Models\\RecommendationResult.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\RecommendationResult.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Models\\RecommendationResult.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-11T21:26:34.131Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "GoatModels.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\GoatModels.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Models\\GoatModels.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Models\\GoatModels.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Models\\GoatModels.cs",
+              "ViewState": "AgIAAB8AAAAAAAAAAAAxwC4AAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-11T21:26:32.332Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
-              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Program.cs",
-              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
-              "RelativeToolTip": "NBASimilarPlayerGenerator\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADEAAAAgAAAAAAAAAA==",
+              "Title": "SimilarPlayerController.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Controllers\\SimilarPlayerController.cs",
+              "ViewState": "AgIAAI0AAAAAAAAAAAAcwJYAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-04T19:16:46.516Z",
+              "WhenOpened": "2025-04-04T19:01:07.039Z",
               "EditorCaption": ""
             },
             {
@@ -66,25 +104,40 @@
               "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Services\\IRecommendationService.cs",
               "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Services\\IRecommendationService.cs",
               "RelativeToolTip": "NBASimilarPlayerGenerator\\Services\\IRecommendationService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAAVAAAAAAAAAA==",
+              "ViewState": "AgIAACIAAAAAAAAAAAA9wD4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-04T20:41:56.247Z"
+              "WhenOpened": "2025-04-04T20:41:56.247Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "RecommendationService.cs",
               "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
               "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
               "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
               "RelativeToolTip": "NBASimilarPlayerGenerator\\Services\\RecommendationService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAANABAAA/AAAAAAAAAA==",
+              "ViewState": "AgIAAEcHAAAAAAAAAAAcwGcHAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-04T20:49:22.841Z"
+              "WhenOpened": "2025-04-04T20:49:22.841Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
+              "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Program.cs",
+              "ToolTip": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Program.cs",
+              "RelativeToolTip": "NBASimilarPlayerGenerator\\Program.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAAACAAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T19:16:46.516Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "launchSettings.json",
               "DocumentMoniker": "C:\\Users\\jacob\\OneDrive\\Documents\\TheNBAAnalyst\\SimilarPlayerGenerator\\backend\\NBASimilarPlayerGenerator\\NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
               "RelativeDocumentMoniker": "NBASimilarPlayerGenerator\\Properties\\launchSettings.json",
@@ -93,6 +146,10 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2025-04-04T19:17:07.1Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             }
           ]
         }

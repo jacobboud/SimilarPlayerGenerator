@@ -10,6 +10,9 @@ import {
 } from "../statsConfig";
 import { Player, RecommendationResult } from "../types";
 
+type StatTabMode = "career" | "season" | "peak" | "start";
+type StatMode = "career" | "season" | "peak" | "start";
+
 export default function SimilarPlayerGenerator() {
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Player[]>([]);
@@ -27,8 +30,19 @@ export default function SimilarPlayerGenerator() {
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Which tab is active in the stats panel (still used for the *selected* player)
-  const [statsTab, setStatsTab] = useState<"career" | "season">("career");
+  // Career / Season / Peak / Start tab in stats panel
+  const [statsTab, setStatsTab] = useState<StatTabMode>("career");
+
+  // Peak tab state: start/end seasons + fetched window player
+  const [peakStartSeason, setPeakStartSeason] = useState<number | "">("");
+  const [peakEndSeason, setPeakEndSeason] = useState<number | "">("");
+  const [peakWindowPlayer, setPeakWindowPlayer] = useState<Player | null>(null);
+
+  // Start tab state: first N seasons + fetched window player
+  const [startSeasonsInput, setStartSeasonsInput] = useState<string>("");
+  const [startWindowPlayer, setStartWindowPlayer] = useState<Player | null>(
+    null
+  );
 
   // Groups + topN for recommendations
   const [groupsPreset, setGroupsPreset] = useState<GroupsPreset>("stats");
@@ -39,6 +53,13 @@ export default function SimilarPlayerGenerator() {
   const [usedGroupsForLastRequest, setUsedGroupsForLastRequest] = useState<
     GroupName[] | null
   >(null);
+
+  const formatSeason = (year: number | null | undefined) => {
+    if (!year) return "";
+    const start = year - 1; // 2025 -> 2024
+    const endShort = String(year).slice(-2); // 2025 -> "25"
+    return `${start}-${endShort}`; // "2024-25"
+  };
 
   // ---- Group helpers (for backend presets/custom) ----
 
@@ -124,6 +145,13 @@ export default function SimilarPlayerGenerator() {
       setStatsTab("career");
       setWarnings([]);
 
+      // Clear peak/start state
+      setPeakStartSeason("");
+      setPeakEndSeason("");
+      setPeakWindowPlayer(null);
+      setStartSeasonsInput("");
+      setStartWindowPlayer(null);
+
       if (Array.isArray(res.data) && res.data.length === 0) {
         setNoResultsMessage(
           `No players found matching "${query}". This might be because:\n` +
@@ -160,6 +188,13 @@ export default function SimilarPlayerGenerator() {
       setShowAdvanced(false);
       setStatsTab("career");
       setWarnings([]);
+
+      // Clear peak/start state when a new player is chosen
+      setPeakStartSeason("");
+      setPeakEndSeason("");
+      setPeakWindowPlayer(null);
+      setStartSeasonsInput("");
+      setStartWindowPlayer(null);
     } catch (err) {
       console.error("Season fetch failed:", err);
     }
@@ -205,17 +240,48 @@ export default function SimilarPlayerGenerator() {
 
     setUsedGroupsForLastRequest(effectiveGroups);
 
-    const useSeason = statsTab === "season" && selectedSeason !== null;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
     let url: string;
-    if (useSeason) {
-      url = `${import.meta.env.VITE_API_BASE_URL}similarplayer/season/${
-        selectedPlayer.playerId
-      }/${selectedSeason}?${params}`;
+    let usedSeasonForCall: number | null = null;
+
+    if (statsTab === "season" && selectedSeason !== null) {
+      // per-season similarity
+      url = `${baseUrl}similarplayer/season/${selectedPlayer.playerId}/${selectedSeason}?${params}`;
+      usedSeasonForCall = selectedSeason;
+    } else if (statsTab === "peak") {
+      // peak window similarity
+      if (!peakStartSeason || !peakEndSeason) {
+        setWarnings([
+          "Please select both a start and end season for the peak window.",
+        ]);
+        return;
+      }
+      const fromSeason = Number(peakStartSeason);
+      const toSeason = Number(peakEndSeason);
+      if (toSeason < fromSeason) {
+        setWarnings([
+          "End season must be greater than or equal to start season for the peak window.",
+        ]);
+        return;
+      }
+      url = `${baseUrl}similarplayer/peak/${selectedPlayer.playerId}?fromSeason=${fromSeason}&toSeason=${toSeason}&${params}`;
+      usedSeasonForCall = null; // peak windows use "career-like" stats
+    } else if (statsTab === "start") {
+      // start window similarity
+      const n = parseInt(startSeasonsInput, 10);
+      if (!Number.isFinite(n) || n <= 0) {
+        setWarnings([
+          "Please enter a positive number of seasons for the start window.",
+        ]);
+        return;
+      }
+      url = `${baseUrl}similarplayer/start/${selectedPlayer.playerId}?nSeasons=${n}&${params}`;
+      usedSeasonForCall = null; // start windows use "career-like" stats
     } else {
-      url = `${import.meta.env.VITE_API_BASE_URL}similarplayer/career/${
-        selectedPlayer.playerId
-      }?${params}`;
+      // default to full career similarity
+      url = `${baseUrl}similarplayer/career/${selectedPlayer.playerId}?${params}`;
+      usedSeasonForCall = null;
     }
 
     try {
@@ -223,21 +289,47 @@ export default function SimilarPlayerGenerator() {
       const data = res.data;
       setRecommendations(data.players ?? []);
       setWarnings(data.warnings ?? []);
-      setUsedSeason(useSeason ? selectedSeason : null);
+      setUsedSeason(usedSeasonForCall);
     } catch (err) {
       console.error("Failed to fetch recommendations:", err);
       setWarnings(["Something went wrong fetching recommendations."]);
     }
   };
 
+  const getSelectedPlayerYearsDisplay = () => {
+    if (!selectedPlayer) return "";
+
+    if (statsTab === "season" && selectedSeason !== null) {
+      return formatSeason(selectedSeason);
+    }
+
+    if (statsTab === "peak" && peakWindowPlayer?.years) {
+      return peakWindowPlayer.years;
+    }
+
+    if (statsTab === "start" && startWindowPlayer?.years) {
+      return startWindowPlayer.years;
+    }
+
+    return selectedPlayer.years;
+  };
+
   const getSelectedPlayerTeam = () => {
     if (!selectedPlayer) return "";
+
+    // Peak / Start: prefer window teams if available
+    if (statsTab === "peak" && peakWindowPlayer?.teams?.length) {
+      return peakWindowPlayer.teams.join(", ");
+    }
+    if (statsTab === "start" && startWindowPlayer?.teams?.length) {
+      return startWindowPlayer.teams.join(", ");
+    }
 
     const displaySeason =
       statsTab === "season" && selectedSeason !== null ? selectedSeason : null;
 
-    if (displaySeason == null) {
-      // Career view
+    if (displaySeason == null || statsTab === "career") {
+      // Career or no specific season
       return selectedPlayer.teams?.join(", ") ?? "";
     }
 
@@ -248,7 +340,7 @@ export default function SimilarPlayerGenerator() {
     return season?.team ?? selectedPlayer.teams?.join(", ") ?? "";
   };
 
-  // Stats source respects the statsTab (career vs season).
+  // Stats source respects the statsTab.
   const getSelectedPlayerStats = () => {
     if (!selectedPlayer) return null;
 
@@ -256,25 +348,47 @@ export default function SimilarPlayerGenerator() {
       return selectedPlayer.careerStats ?? null;
     }
 
-    if (selectedSeason == null) return null;
+    if (statsTab === "season") {
+      if (selectedSeason == null) return null;
+      const season = selectedPlayer.seasons?.find(
+        (s) => s.year === selectedSeason
+      );
+      return season?.stats ?? null;
+    }
 
-    const season = selectedPlayer.seasons?.find(
-      (s) => s.year === selectedSeason
-    );
-    return season?.stats ?? null;
+    if (statsTab === "peak") {
+      return peakWindowPlayer?.careerStats ?? null;
+    }
+
+    if (statsTab === "start") {
+      return startWindowPlayer?.careerStats ?? null;
+    }
+
+    return null;
   };
 
   const getStatsTitle = () => {
     if (statsTab === "career") {
-      return "Career Per Game Stats";
+      return "Career Stats";
     }
-    if (selectedSeason != null) {
-      return `Season ${selectedSeason} Per Game Stats`;
+    if (statsTab === "season") {
+      if (selectedSeason != null) {
+        return `${formatSeason(selectedSeason)} Season Stats`;
+      }
+      return "Season Stats";
     }
-    return "Season Per Game Stats";
+    if (statsTab === "peak") {
+      return peakWindowPlayer?.years
+        ? `Peak Stats (${peakWindowPlayer.years})`
+        : "Peak Stats";
+    }
+    if (statsTab === "start") {
+      return startWindowPlayer?.years
+        ? `Start Stats (${startWindowPlayer.years})`
+        : "Start Stats";
+    }
+    return "Stats";
   };
-
-  type StatMode = "career" | "season";
 
   function denormalizeCumulativeChain(
     stats: Record<string, number>,
@@ -327,7 +441,7 @@ export default function SimilarPlayerGenerator() {
         "all_rookie_ORV",
       ]);
     } else {
-      // CAREER versions (counts)
+      // CAREER-style versions (counts) – used for career, peak windows, start windows
       denormalizeCumulativeChain(stats, [
         "career_all_nba_1T_count",
         "career_all_nba_2T_count",
@@ -352,7 +466,7 @@ export default function SimilarPlayerGenerator() {
   }
 
   // Render grouped stats for the selected player
-  const renderSelectedPlayerStatGroups = (mode: "career" | "season") => {
+  const renderSelectedPlayerStatGroups = (mode: StatMode) => {
     const rawStats = getSelectedPlayerStats();
     if (!rawStats) return null;
 
@@ -366,7 +480,8 @@ export default function SimilarPlayerGenerator() {
             return null;
           }
 
-          const keys = mode === "career" ? group.careerKeys : group.seasonKeys;
+          // Season vs everything else (career, peak, start share careerKeys)
+          const keys = mode === "season" ? group.seasonKeys : group.careerKeys;
 
           const availableKeys = keys.filter((k) => k in stats);
           if (availableKeys.length === 0) return null;
@@ -413,22 +528,131 @@ export default function SimilarPlayerGenerator() {
     );
   };
 
-  const isSeasonComparison = statsTab === "season" && selectedSeason !== null;
-
+  // Clear recommendations whenever the mode / selectors change
   useEffect(() => {
     setRecommendations([]);
     setUsedSeason(null);
     setRecStatsShown({});
     setWarnings([]);
-  }, [statsTab, selectedSeason]);
+  }, [
+    statsTab,
+    selectedSeason,
+    peakStartSeason,
+    peakEndSeason,
+    startSeasonsInput,
+  ]);
 
   useEffect(() => {
-    // When switching between Career and Season tabs,
+    // When switching between tabs,
     // reset the "Show More Stats" toggle for the selected player panel
     setShowAdvanced(false);
   }, [statsTab]);
 
+  // Fetch peak window stats whenever player + peak seasons change (and tab is Peak)
+  useEffect(() => {
+    const fetchPeakWindow = async () => {
+      if (!selectedPlayer) return;
+      if (statsTab !== "peak") return;
+      if (!peakStartSeason || !peakEndSeason) {
+        setPeakWindowPlayer(null);
+        return;
+      }
+
+      const fromSeason = Number(peakStartSeason);
+      const toSeason = Number(peakEndSeason);
+      if (!Number.isFinite(fromSeason) || !Number.isFinite(toSeason)) {
+        setPeakWindowPlayer(null);
+        return;
+      }
+      if (toSeason < fromSeason) {
+        setPeakWindowPlayer(null);
+        return;
+      }
+
+      try {
+        const res = await axios.get<Player>(
+          `${import.meta.env.VITE_API_BASE_URL}similarplayer/peakwindow/${
+            selectedPlayer.playerId
+          }?fromSeason=${fromSeason}&toSeason=${toSeason}`
+        );
+        setPeakWindowPlayer(res.data);
+      } catch (err) {
+        console.error("Failed to fetch peak window stats:", err);
+        setPeakWindowPlayer(null);
+      }
+    };
+
+    fetchPeakWindow();
+  }, [statsTab, selectedPlayer?.playerId, peakStartSeason, peakEndSeason]);
+
+  // Fetch start window stats whenever player + N seasons change (and tab is Start)
+  useEffect(() => {
+    const fetchStartWindow = async () => {
+      if (!selectedPlayer) return;
+      if (statsTab !== "start") return;
+      if (!startSeasonsInput) {
+        setStartWindowPlayer(null);
+        return;
+      }
+
+      const n = parseInt(startSeasonsInput, 10);
+      if (!Number.isFinite(n) || n <= 0) {
+        setStartWindowPlayer(null);
+        return;
+      }
+
+      try {
+        const res = await axios.get<Player>(
+          `${import.meta.env.VITE_API_BASE_URL}similarplayer/startwindow/${
+            selectedPlayer.playerId
+          }?nSeasons=${n}`
+        );
+        setStartWindowPlayer(res.data);
+      } catch (err) {
+        console.error("Failed to fetch start window stats:", err);
+        setStartWindowPlayer(null);
+      }
+    };
+
+    fetchStartWindow();
+  }, [statsTab, selectedPlayer?.playerId, startSeasonsInput]);
+
   // ---- Render ----
+
+  // Helper label for comparison mode
+  const comparisonExplanation = (() => {
+    if (statsTab === "career") {
+      return "Currently comparing CAREERS";
+    }
+    if (statsTab === "season") {
+      if (selectedSeason != null) {
+        return `Currently comparing SEASONS`;
+      }
+      return "Season tab selected. Pick a season above to compare that season against other players’ seasons.";
+    }
+    if (statsTab === "peak") {
+      if (peakStartSeason && peakEndSeason) {
+        const from = Number(peakStartSeason);
+        const to = Number(peakEndSeason);
+        const windowSize =
+          Number.isFinite(from) && Number.isFinite(to)
+            ? to - from + 1
+            : undefined;
+        return windowSize && windowSize > 0
+          ? `Currently comparing ${windowSize}-season PEAKS`
+          : "Peak tab selected. Choose a valid start and end season to compare that window against other players’ same-length windows.";
+      }
+      return "Peak tab selected. Choose a start and end season to compare that multi-season window to other players’ peak windows.";
+    }
+    if (statsTab === "start") {
+      const n = parseInt(startSeasonsInput, 10);
+      if (Number.isFinite(n) && n > 0) {
+        return `Currently comparing FIRST ${n} SEASONS of players’ careers.`;
+      }
+      return "Start tab selected. Enter how many seasons to compare the first N seasons of careers.";
+    }
+    return "";
+  })();
 
   return (
     <div
@@ -558,9 +782,9 @@ export default function SimilarPlayerGenerator() {
             }}
           >
             Selected Player: {selectedPlayer.name}{" "}
-            {statsTab === "season" && selectedSeason !== null
-              ? `(${selectedSeason})`
-              : `(${selectedPlayer.years})`}
+            {getSelectedPlayerYearsDisplay()
+              ? `(${getSelectedPlayerYearsDisplay()})`
+              : ""}
           </div>
 
           {getSelectedPlayerTeam() && (
@@ -570,7 +794,6 @@ export default function SimilarPlayerGenerator() {
           )}
 
           {/* Stats panel with tabs */}
-
           <div
             style={{
               maxHeight: "400px",
@@ -588,7 +811,8 @@ export default function SimilarPlayerGenerator() {
             {/* Tabs */}
             <div
               style={{
-                display: "flex",
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
                 gap: "8px",
                 marginBottom: "12px",
               }}
@@ -597,9 +821,13 @@ export default function SimilarPlayerGenerator() {
                 onClick={() => {
                   setStatsTab("career");
                   setSelectedSeason(null);
+                  setPeakStartSeason("");
+                  setPeakEndSeason("");
+                  setPeakWindowPlayer(null);
+                  setStartSeasonsInput("");
+                  setStartWindowPlayer(null);
                 }}
                 style={{
-                  flex: 1,
                   padding: "8px 12px",
                   borderRadius: "4px",
                   border: "1px solid var(--color-border)",
@@ -618,9 +846,15 @@ export default function SimilarPlayerGenerator() {
               </button>
 
               <button
-                onClick={() => setStatsTab("season")}
+                onClick={() => {
+                  setStatsTab("season");
+                  setPeakStartSeason("");
+                  setPeakEndSeason("");
+                  setPeakWindowPlayer(null);
+                  setStartSeasonsInput("");
+                  setStartWindowPlayer(null);
+                }}
                 style={{
-                  flex: 1,
                   padding: "8px 12px",
                   borderRadius: "4px",
                   border: "1px solid var(--color-border)",
@@ -636,6 +870,57 @@ export default function SimilarPlayerGenerator() {
                 }}
               >
                 Season
+              </button>
+
+              <button
+                onClick={() => {
+                  setStatsTab("peak");
+                  setSelectedSeason(null);
+                  setStartSeasonsInput("");
+                  setStartWindowPlayer(null);
+                }}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--color-border)",
+                  backgroundColor:
+                    statsTab === "peak"
+                      ? "var(--color-primary)"
+                      : "var(--color-surface)",
+                  color:
+                    statsTab === "peak"
+                      ? "var(--color-primary-contrast)"
+                      : "var(--color-text-primary)",
+                  cursor: "pointer",
+                }}
+              >
+                Peak
+              </button>
+
+              <button
+                onClick={() => {
+                  setStatsTab("start");
+                  setSelectedSeason(null);
+                  setPeakStartSeason("");
+                  setPeakEndSeason("");
+                  setPeakWindowPlayer(null);
+                }}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--color-border)",
+                  backgroundColor:
+                    statsTab === "start"
+                      ? "var(--color-primary)"
+                      : "var(--color-surface)",
+                  color:
+                    statsTab === "start"
+                      ? "var(--color-primary-contrast)"
+                      : "var(--color-text-primary)",
+                  cursor: "pointer",
+                }}
+              >
+                Start
               </button>
             </div>
 
@@ -656,10 +941,85 @@ export default function SimilarPlayerGenerator() {
                     <option value="">(choose a season)</option>
                     {seasons.map((s) => (
                       <option key={s} value={s}>
-                        {s}
+                        {formatSeason(s)}
                       </option>
                     ))}
                   </select>
+                </label>
+              </div>
+            )}
+
+            {/* Peak tab controls: start / end season dropdowns */}
+            {statsTab === "peak" && (
+              <div
+                style={{
+                  marginBottom: "12px",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                }}
+              >
+                <label>
+                  Start season:{" "}
+                  <select
+                    value={peakStartSeason === "" ? "" : peakStartSeason}
+                    onChange={(e) =>
+                      setPeakStartSeason(
+                        e.target.value ? Number(e.target.value) : ""
+                      )
+                    }
+                    style={{ padding: "6px 8px", minWidth: "120px" }}
+                  >
+                    <option value="">(choose start)</option>
+                    {seasons
+                      .slice()
+                      .sort((a, b) => a - b)
+                      .map((s) => (
+                        <option key={s} value={s}>
+                          {formatSeason(s)}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+
+                <label>
+                  End season:{" "}
+                  <select
+                    value={peakEndSeason === "" ? "" : peakEndSeason}
+                    onChange={(e) =>
+                      setPeakEndSeason(
+                        e.target.value ? Number(e.target.value) : ""
+                      )
+                    }
+                    style={{ padding: "6px 8px", minWidth: "120px" }}
+                  >
+                    <option value="">(choose end)</option>
+                    {seasons
+                      .slice()
+                      .sort((a, b) => a - b)
+                      .map((s) => (
+                        <option key={s} value={s}>
+                          {formatSeason(s)}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {/* Start tab controls: N seasons input */}
+            {statsTab === "start" && (
+              <div style={{ marginBottom: "12px" }}>
+                <label>
+                  First{" "}
+                  <input
+                    type="number"
+                    min={1}
+                    value={startSeasonsInput}
+                    onChange={(e) => setStartSeasonsInput(e.target.value)}
+                    style={{ width: "70px", margin: "0 4px" }}
+                  />{" "}
+                  seasons (from start of career)
                 </label>
               </div>
             )}
@@ -700,6 +1060,10 @@ export default function SimilarPlayerGenerator() {
               >
                 {statsTab === "season"
                   ? "Select a season to view stats."
+                  : statsTab === "peak"
+                  ? "Choose a valid start and end season to view peak stats."
+                  : statsTab === "start"
+                  ? "Enter how many seasons to view the first N seasons of this player’s career."
                   : "No stats available."}
               </div>
             )}
@@ -864,9 +1228,7 @@ export default function SimilarPlayerGenerator() {
           <div
             style={{ marginBottom: "10px", color: "var(--color-text-muted)" }}
           >
-            {isSeasonComparison
-              ? `Currently comparing SEASONS. Choose the Career tab if you want career-based comparisons.`
-              : "Currently comparing CAREERS. Choose the Season tab and pick a season if you want season-based comparisons."}
+            {comparisonExplanation}
           </div>
 
           <button
@@ -924,7 +1286,8 @@ export default function SimilarPlayerGenerator() {
                 }}
               >
                 {recommendations.map((player, index) => {
-                  const mode: "career" | "season" =
+                  // For window-based modes (peak/start), we use "career-like" stats
+                  const mode: StatMode =
                     usedSeason != null ? "season" : "career";
                   const rawStats =
                     mode === "season" ? player.seasonStats : player.careerStats;
