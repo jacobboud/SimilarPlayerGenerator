@@ -16,8 +16,8 @@ namespace NBASimilarPlayerGenerator.Services
         private readonly List<dynamic> _careerRows;
 
         // peaks and starts, keyed by window size N
-        private readonly Dictionary<int, List<dynamic>> _peakRowsByWindow = new();
-        private readonly Dictionary<int, List<dynamic>> _startRowsByWindow = new();
+        private readonly Dictionary<int, string> _peakFileByWindow = new();
+        private readonly Dictionary<int, string> _startFileByWindow = new();
 
         // Lookups
         private readonly Dictionary<string, PlayerDto> _players = new();
@@ -40,46 +40,33 @@ namespace NBASimilarPlayerGenerator.Services
             "Championships", "All-League Teams", "Individual Awards"
         };
 
-        private void LoadPeakCsvs(string basePath)
+        private void IndexPeakCsvs(string basePath)
         {
-            var files = Directory.GetFiles(basePath, "nba_player_peaks_*.csv");
-            foreach (var path in files)
+            foreach (var path in Directory.GetFiles(basePath, "nba_player_peaks_*.csv"))
             {
-                var fileName = Path.GetFileNameWithoutExtension(path); // nba_player_peaks_4
+                var fileName = Path.GetFileNameWithoutExtension(path);
                 var parts = fileName.Split('_');
-                if (!int.TryParse(parts.Last(), out var windowSize) || windowSize <= 0)
-                    continue;
-
-                using var reader = new StreamReader(path);
-                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-                var rows = csv.GetRecords<dynamic>().ToList();
-
-                if (rows.Count == 0) continue;
-
-                _peakRowsByWindow[windowSize] = rows;
-                Console.WriteLine($"Loaded peaks window N={windowSize} with {rows.Count} rows.");
+                if (!int.TryParse(parts.Last(), out var windowSize) || windowSize <= 0) continue;
+                _peakFileByWindow[windowSize] = path;
             }
         }
 
-        private void LoadStartCsvs(string basePath)
+        private void IndexStartCsvs(string basePath)
         {
-            var files = Directory.GetFiles(basePath, "nba_player_starts_*.csv");
-            foreach (var path in files)
+            foreach (var path in Directory.GetFiles(basePath, "nba_player_starts_*.csv"))
             {
-                var fileName = Path.GetFileNameWithoutExtension(path); // nba_player_starts_6
+                var fileName = Path.GetFileNameWithoutExtension(path);
                 var parts = fileName.Split('_');
-                if (!int.TryParse(parts.Last(), out var windowSize) || windowSize <= 0)
-                    continue;
-
-                using var reader = new StreamReader(path);
-                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-                var rows = csv.GetRecords<dynamic>().ToList();
-
-                if (rows.Count == 0) continue;
-
-                _startRowsByWindow[windowSize] = rows;
-                Console.WriteLine($"Loaded starts window N={windowSize} with {rows.Count} rows.");
+                if (!int.TryParse(parts.Last(), out var windowSize) || windowSize <= 0) continue;
+                _startFileByWindow[windowSize] = path;
             }
+        }
+
+        private static List<dynamic> LoadCsvRows(string path)
+        {
+            using var reader = new StreamReader(path);
+            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            return csv.GetRecords<dynamic>().ToList();
         }
 
         public RecommendationService(IWebHostEnvironment env)
@@ -122,8 +109,8 @@ namespace NBASimilarPlayerGenerator.Services
                 BuildLookupsFromCareers();
 
                 // NEW: load peaks and starts
-                LoadPeakCsvs(basePath);
-                LoadStartCsvs(basePath);
+                IndexPeakCsvs(basePath);
+                IndexStartCsvs(basePath);
 
                 Console.WriteLine("✅ RecommendationService initialized successfully.");
             }
@@ -769,8 +756,11 @@ namespace NBASimilarPlayerGenerator.Services
                 return null;
 
             int windowSize = toSeason - fromSeason + 1;
-            if (!_peakRowsByWindow.TryGetValue(windowSize, out var rows) || rows.Count == 0)
+            if (!_peakFileByWindow.TryGetValue(windowSize, out var path) || !File.Exists(path))
                 return null;
+
+            var rows = LoadCsvRows(path);
+            if (rows.Count == 0) return null;
 
             var rowDyn = rows.FirstOrDefault(r =>
             {
@@ -824,8 +814,11 @@ namespace NBASimilarPlayerGenerator.Services
             if (string.IsNullOrWhiteSpace(playerId) || nSeasons <= 0)
                 return null;
 
-            if (!_startRowsByWindow.TryGetValue(nSeasons, out var rows) || rows.Count == 0)
+            if (!_startFileByWindow.TryGetValue(nSeasons, out var path) || !File.Exists(path))
                 return null;
+
+            var rows = LoadCsvRows(path);
+            if (rows.Count == 0) return null;
 
             var rowDyn = rows.FirstOrDefault(r =>
             {
@@ -1246,7 +1239,14 @@ namespace NBASimilarPlayerGenerator.Services
             }
 
             int windowSize = toSeason - fromSeason + 1;
-            if (!_peakRowsByWindow.TryGetValue(windowSize, out var allRows) || allRows.Count == 0)
+            if (!_peakFileByWindow.TryGetValue(windowSize, out var path) || !File.Exists(path))
+            {
+                result.Warnings.Add($"No peak windows available for window size N={windowSize}.");
+                return result;
+            }
+
+            var allRows = LoadCsvRows(path);
+            if (allRows.Count == 0)
             {
                 result.Warnings.Add($"No peak windows available for window size N={windowSize}.");
                 return result;
@@ -1449,7 +1449,14 @@ namespace NBASimilarPlayerGenerator.Services
                 return result;
             }
 
-            if (!_startRowsByWindow.TryGetValue(nSeasons, out var allRows) || allRows.Count == 0)
+            if (!_startFileByWindow.TryGetValue(nSeasons, out var path) || !File.Exists(path))
+            {
+                result.Warnings.Add($"No start windows available for N={nSeasons} seasons.");
+                return result;
+            }
+
+            var allRows = LoadCsvRows(path);
+            if (allRows.Count == 0)
             {
                 result.Warnings.Add($"No start windows available for N={nSeasons} seasons.");
                 return result;
