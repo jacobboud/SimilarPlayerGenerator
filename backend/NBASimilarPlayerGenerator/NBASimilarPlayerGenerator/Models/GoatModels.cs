@@ -6,24 +6,20 @@ namespace NBASimilarPlayerGenerator.Models
     public class GoatRequest
     {
         /// <summary>
-        /// "career" or "season". Defaults to "career" if null/empty.
+        /// "career", "season", "peak", or "start". Defaults to "career".
         /// </summary>
         public string? Mode { get; set; }
 
         /// <summary>
-        /// Stat weights: key = stat column name, value = weight.
-        /// e.g. { "career_pts": 0.1, "career_ws": 3.0 } or { "pts": 1.0, "ws": 5.0 }
+        /// Used for "peak" and "start" modes:
+        /// - peak: N-season window size
+        /// - start: first N seasons
         /// </summary>
+        public int? NSeasons { get; set; }
+
         public Dictionary<string, double>? Weights { get; set; }
 
-        /// <summary>
-        /// 1-based page number.
-        /// </summary>
         public int Page { get; set; } = 1;
-
-        /// <summary>
-        /// Page size (results per page).
-        /// </summary>
         public int PageSize { get; set; } = 25;
     }
 

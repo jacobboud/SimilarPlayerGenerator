@@ -18,7 +18,7 @@ export interface RecommendationResult {
   warnings: string[];
 }
 
-export type GoatMode = "career" | "season";
+export type GoatMode = "career" | "season" | "peak" | "start";
 
 export interface GoatPlayerResult {
   playerId: string;

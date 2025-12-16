@@ -1655,16 +1655,43 @@ namespace NBASimilarPlayerGenerator.Services
 
         // ---------- Public API: GOAT Ranking ----------
 
+        private double? ComputeWeightedScore(
+    IDictionary<string, object?> row,
+    Dictionary<string, double> weights)
+        {
+            double score = 0;
+            bool hasContribution = false;
+
+            foreach (var kvp in weights)
+            {
+                var statKey = kvp.Key;
+                var weight = kvp.Value;
+
+                if (!row.ContainsKey(statKey))
+                    continue;
+
+                if (TryGetNumericOrBool(row[statKey], out var val))
+                {
+                    score += val * weight;
+                    hasContribution = true;
+                }
+            }
+
+            return hasContribution ? score : (double?)null;
+        }
+
         public GoatResponse CalculateGoatScores(GoatRequest request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
             var mode = (request.Mode ?? "career").Trim().ToLowerInvariant();
-            if (mode != "career" && mode != "season")
+            if (mode != "career" && mode != "season" && mode != "peak" && mode != "start")
             {
                 mode = "career";
             }
+
+            int? nSeasons = request.NSeasons;
 
             int page = request.Page <= 0 ? 1 : request.Page;
             int pageSize = request.PageSize <= 0 ? 25 : request.PageSize;
@@ -1760,6 +1787,221 @@ namespace NBASimilarPlayerGenerator.Services
                         Years = years,
                         Teams = teams,
                         Season = season,
+                        GoatScore = score,
+                        Stats = statsDict
+                    });
+                }
+            }
+            else if (mode == "peak")
+            {
+                var n = nSeasons ?? 0;
+                if (n <= 0)
+                {
+                    return new GoatResponse
+                    {
+                        Page = 1,
+                        PageSize = pageSize,
+                        TotalCount = 0,
+                        TotalPages = 0,
+                        Players = new List<GoatPlayerResult>()
+                    };
+                }
+
+                if (!_peakFileByWindow.TryGetValue(n, out var path) || !File.Exists(path))
+                {
+                    return new GoatResponse
+                    {
+                        Page = 1,
+                        PageSize = pageSize,
+                        TotalCount = 0,
+                        TotalPages = 0,
+                        Players = new List<GoatPlayerResult>()
+                    };
+                }
+
+                var allRows = LoadCsvRows(path);
+                if (allRows.Count == 0)
+                {
+                    return new GoatResponse
+                    {
+                        Page = 1,
+                        PageSize = pageSize,
+                        TotalCount = 0,
+                        TotalPages = 0,
+                        Players = new List<GoatPlayerResult>()
+                    };
+                }
+
+                // Best window per playerId
+                var bestByPlayer = new Dictionary<string, GoatPlayerResult>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var rowDyn in allRows)
+                {
+                    var row = (IDictionary<string, object?>)rowDyn;
+
+                    var playerId = row.TryGetValue("player_id", out var pidObj)
+                        ? pidObj?.ToString()?.Trim()
+                        : null;
+
+                    if (string.IsNullOrWhiteSpace(playerId))
+                        continue;
+
+                    var scoreOrNull = ComputeWeightedScore(row, weights);
+                    if (!scoreOrNull.HasValue)
+                        continue;
+
+                    double score = scoreOrNull.Value;
+
+                    int.TryParse(row.TryGetValue("from_season", out var fsObj) ? fsObj?.ToString() : null, out var fromSeason);
+                    int.TryParse(row.TryGetValue("to_season", out var tsObj) ? tsObj?.ToString() : null, out var toSeason);
+
+                    _players.TryGetValue(playerId, out var basePlayer);
+                    var name = basePlayer?.Name
+                        ?? (row.TryGetValue("player", out var pObj) ? pObj?.ToString() : null)
+                        ?? playerId;
+
+                    // Window teams if present, else fallback to career teams
+                    List<string> teams;
+                    var teamsStr = row.TryGetValue("teams", out var tObj) ? tObj?.ToString() : null;
+                    if (!string.IsNullOrWhiteSpace(teamsStr))
+                    {
+                        teams = teamsStr
+                            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(t => t.Trim())
+                            .Where(t => t.Length > 0)
+                            .Distinct()
+                            .ToList();
+                    }
+                    else
+                    {
+                        teams = basePlayer?.Teams ?? (_teamsById.TryGetValue(playerId, out var ts) ? ts : new List<string>());
+                    }
+
+                    var yearsLabel = (fromSeason > 0 && toSeason > 0)
+                        ? $"{fromSeason}-{toSeason}"
+                        : $"{n} season peak";
+
+                    var statsDict = ExtractNumericStatsFromRow(
+                        row,
+                        "player", "player_id", "teams", "from_season", "to_season"
+                    );
+
+                    var candidate = new GoatPlayerResult
+                    {
+                        PlayerId = playerId,
+                        Name = name ?? playerId,
+                        Years = yearsLabel,
+                        Teams = teams,
+                        Season = null,          // keep null for non-season modes
+                        GoatScore = score,
+                        Stats = statsDict
+                    };
+
+                    if (!bestByPlayer.TryGetValue(playerId, out var existing) || candidate.GoatScore > existing.GoatScore)
+                    {
+                        bestByPlayer[playerId] = candidate;
+                    }
+                }
+
+                results = bestByPlayer.Values.ToList();
+            }
+            else if (mode == "start")
+            {
+                var n = nSeasons ?? 0;
+                if (n <= 0)
+                {
+                    return new GoatResponse
+                    {
+                        Page = 1,
+                        PageSize = pageSize,
+                        TotalCount = 0,
+                        TotalPages = 0,
+                        Players = new List<GoatPlayerResult>()
+                    };
+                }
+
+                if (!_startFileByWindow.TryGetValue(n, out var path) || !File.Exists(path))
+                {
+                    return new GoatResponse
+                    {
+                        Page = 1,
+                        PageSize = pageSize,
+                        TotalCount = 0,
+                        TotalPages = 0,
+                        Players = new List<GoatPlayerResult>()
+                    };
+                }
+
+                var allRows = LoadCsvRows(path);
+                if (allRows.Count == 0)
+                {
+                    return new GoatResponse
+                    {
+                        Page = 1,
+                        PageSize = pageSize,
+                        TotalCount = 0,
+                        TotalPages = 0,
+                        Players = new List<GoatPlayerResult>()
+                    };
+                }
+
+                foreach (var rowDyn in allRows)
+                {
+                    var row = (IDictionary<string, object?>)rowDyn;
+
+                    var playerId = row.TryGetValue("player_id", out var pidObj)
+                        ? pidObj?.ToString()?.Trim()
+                        : null;
+
+                    if (string.IsNullOrWhiteSpace(playerId))
+                        continue;
+
+                    var scoreOrNull = ComputeWeightedScore(row, weights);
+                    if (!scoreOrNull.HasValue)
+                        continue;
+
+                    double score = scoreOrNull.Value;
+
+                    int.TryParse(row.TryGetValue("from_season", out var fsObj) ? fsObj?.ToString() : null, out var fromSeason);
+                    int.TryParse(row.TryGetValue("to_season", out var tsObj) ? tsObj?.ToString() : null, out var toSeason);
+
+                    _players.TryGetValue(playerId, out var basePlayer);
+                    var name = basePlayer?.Name
+                        ?? (row.TryGetValue("player", out var pObj) ? pObj?.ToString() : null)
+                        ?? playerId;
+
+                    List<string> teams;
+                    var teamsStr = row.TryGetValue("teams", out var tObj) ? tObj?.ToString() : null;
+                    if (!string.IsNullOrWhiteSpace(teamsStr))
+                    {
+                        teams = teamsStr
+                            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(t => t.Trim())
+                            .Where(t => t.Length > 0)
+                            .Distinct()
+                            .ToList();
+                    }
+                    else
+                    {
+                        teams = basePlayer?.Teams ?? (_teamsById.TryGetValue(playerId, out var ts) ? ts : new List<string>());
+                    }
+
+                    var yearsLabel = (fromSeason > 0 && toSeason > 0)
+                        ? $"{fromSeason}-{toSeason}"
+                        : $"{n} seasons (start)";
+
+                    var statsDict = ExtractNumericStatsFromRow(
+                        row,
+                        "player", "player_id", "teams", "from_season", "to_season"
+                    );
+
+                    results.Add(new GoatPlayerResult
+                    {
+                        PlayerId = playerId,
+                        Name = name ?? playerId,
+                        Years = yearsLabel,
+                        Teams = teams,
+                        Season = null,
                         GoatScore = score,
                         Stats = statsDict
                     });

@@ -95,6 +95,7 @@ export default function GoatPage() {
 
   // Single canonical weight map (keyed by SEASON stat keys)
   const [weightInputs, setWeightInputs] = useState<WeightMap>({});
+  const [nSeasonsInput, setNSeasonsInput] = useState<string>("5"); // pick a default you like
 
   const [results, setResults] = useState<GoatPlayerResult[]>([]);
   const [page, setPage] = useState(1);
@@ -202,12 +203,8 @@ export default function GoatPage() {
         if (w == null || Number.isNaN(w) || w === 0) return;
 
         let backendKey: string;
-        if (modeToUse === "season") {
-          backendKey = seasonKey;
-        } else {
-          // Career mode: map to corresponding career key if available, otherwise fall back.
-          backendKey = careerKeys[idx] ?? seasonKey;
-        }
+        if (modeToUse === "season") backendKey = seasonKey;
+        else backendKey = careerKeys[idx] ?? seasonKey; // career, peak, start all use careerKeys
 
         backend[backendKey] = w;
       });
@@ -220,7 +217,8 @@ export default function GoatPage() {
     targetPage: number,
     targetPageSize: number,
     modeToUse: GoatMode,
-    backendWeights: NumericWeightMap
+    backendWeights: NumericWeightMap,
+    nSeasonsToUse?: number
   ) {
     if (Object.keys(backendWeights).length === 0) {
       setResults([]);
@@ -237,14 +235,24 @@ export default function GoatPage() {
     setShowAllStatsRows({});
 
     try {
+      const body: any = {
+        mode: modeToUse,
+        page: targetPage,
+        pageSize: targetPageSize,
+        weights: backendWeights,
+      };
+
+      if (
+        (modeToUse === "peak" || modeToUse === "start") &&
+        nSeasonsToUse &&
+        nSeasonsToUse > 0
+      ) {
+        body.nSeasons = nSeasonsToUse;
+      }
+
       const res = await axios.post<GoatResponse>(
         `${import.meta.env.VITE_API_BASE_URL}goat`,
-        {
-          mode: modeToUse,
-          page: targetPage,
-          pageSize: targetPageSize,
-          weights: backendWeights,
-        }
+        body
       );
 
       const data = res.data;
@@ -266,30 +274,53 @@ export default function GoatPage() {
   }
 
   async function handleCalculate() {
-    // 1) Build canonical weights (season-keyed)
     const canonical = buildCanonicalNumericWeights();
-
-    // 2) Convert to backend keys for current mode
     const backendWeights = buildBackendWeights(canonical, mode);
-
-    // 3) Remember what we actually used (for filtering stats later)
     setLastWeightsUsed(backendWeights);
 
-    // 4) Fetch page 1
-    await fetchGoatPage(1, pageSize, mode, backendWeights);
+    let n: number | undefined = undefined;
+    if (mode === "peak" || mode === "start") {
+      const parsed = parseInt(nSeasonsInput, 10);
+      if (Number.isNaN(parsed) || parsed <= 0) {
+        setErrorMsg("Please enter a valid NSeasons value (> 0).");
+        return;
+      }
+      n = parsed;
+    }
+
+    await fetchGoatPage(1, pageSize, mode, backendWeights, n);
+  }
+
+  function getNSeasonsForRequest(): number | undefined {
+    if (mode !== "peak" && mode !== "start") return undefined;
+    const parsed = parseInt(nSeasonsInput, 10);
+    if (Number.isNaN(parsed) || parsed <= 0) return undefined;
+    return parsed;
   }
 
   async function goToPage(newPage: number) {
     if (!lastWeightsUsed) return;
     if (newPage < 1 || (totalPages > 0 && newPage > totalPages)) return;
-    await fetchGoatPage(newPage, pageSize, mode, lastWeightsUsed);
+    await fetchGoatPage(
+      newPage,
+      pageSize,
+      mode,
+      lastWeightsUsed,
+      getNSeasonsForRequest()
+    );
   }
 
   async function changePageSize(newSize: number) {
     const clamped = Math.max(1, Math.min(200, newSize));
     setPageSize(clamped);
     if (!lastWeightsUsed) return;
-    await fetchGoatPage(1, clamped, mode, lastWeightsUsed);
+    await fetchGoatPage(
+      1,
+      clamped,
+      mode,
+      lastWeightsUsed,
+      getNSeasonsForRequest()
+    );
   }
 
   async function handleJumpToPage() {
@@ -304,7 +335,32 @@ export default function GoatPage() {
       setErrorMsg(`Please enter a page between 1 and ${totalPages || 1}.`);
       return;
     }
-    await fetchGoatPage(parsed, pageSize, mode, lastWeightsUsed);
+    await fetchGoatPage(
+      parsed,
+      pageSize,
+      mode,
+      lastWeightsUsed,
+      getNSeasonsForRequest()
+    );
+  }
+
+  function setModeAndReset(m: GoatMode) {
+    setMode(m);
+
+    // clear calculated state
+    setResults([]);
+    setLastWeightsUsed(null);
+    setErrorMsg(null);
+
+    // reset paging
+    setPage(1);
+    setPageInput("");
+    setTotalPages(0);
+    setTotalCount(0);
+
+    // collapse UI state
+    setExpandedRows({});
+    setShowAllStatsRows({});
   }
 
   function toggleRow(rowKey: string) {
@@ -650,7 +706,7 @@ export default function GoatPage() {
           }}
         >
           <button
-            onClick={() => setMode("career")}
+            onClick={() => setModeAndReset("career")}
             style={{
               padding: "8px 16px",
               borderRadius: "4px",
@@ -669,7 +725,7 @@ export default function GoatPage() {
             Careers
           </button>
           <button
-            onClick={() => setMode("season")}
+            onClick={() => setModeAndReset("season")}
             style={{
               padding: "8px 16px",
               borderRadius: "4px",
@@ -687,7 +743,90 @@ export default function GoatPage() {
           >
             Seasons
           </button>
+          <button
+            onClick={() => setModeAndReset("peak")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "4px",
+              border: "1px solid var(--color-border)",
+              backgroundColor:
+                mode === "peak"
+                  ? "var(--color-primary)"
+                  : "var(--color-surface)",
+              color:
+                mode === "peak"
+                  ? "var(--color-primary-contrast)"
+                  : "var(--color-text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            Peaks
+          </button>
+          <button
+            onClick={() => setModeAndReset("start")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "4px",
+              border: "1px solid var(--color-border)",
+              backgroundColor:
+                mode === "start"
+                  ? "var(--color-primary)"
+                  : "var(--color-surface)",
+              color:
+                mode === "start"
+                  ? "var(--color-primary-contrast)"
+                  : "var(--color-text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            Starts
+          </button>
         </div>
+
+        {(mode === "peak" || mode === "start") && (
+          <div style={{ marginBottom: "12px", fontSize: "0.95rem" }}>
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              {mode === "peak"
+                ? "Peak window (N seasons):"
+                : "Start window (first N seasons):"}
+              <input
+                type="number"
+                min={1}
+                max={50}
+                step={1}
+                value={nSeasonsInput}
+                onChange={(e) => setNSeasonsInput(e.target.value)}
+                style={{
+                  width: "90px",
+                  padding: "4px 6px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--color-border)",
+                  backgroundColor: "var(--color-bg)",
+                  color: "var(--color-text-primary)",
+                  textAlign: "center",
+                }}
+              />
+            </label>
+
+            <div
+              style={{
+                marginTop: "6px",
+                color: "var(--color-text-muted)",
+                fontSize: "0.85rem",
+              }}
+            >
+              {mode === "peak"
+                ? "Ranks each player by their best contiguous N-season span."
+                : "Ranks each player by their first N seasons."}
+            </div>
+          </div>
+        )}
 
         <button
           onClick={handleCalculate}

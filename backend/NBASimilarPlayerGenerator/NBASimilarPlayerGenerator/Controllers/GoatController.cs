@@ -22,14 +22,18 @@ namespace NBASimilarPlayerGenerator.Controllers
             if (request == null)
                 return BadRequest("Request body is required.");
 
-            if (string.IsNullOrWhiteSpace(request.Mode))
-                request.Mode = "career";
+            request.Mode = string.IsNullOrWhiteSpace(request.Mode) ? "career" : request.Mode;
 
-            if (request.Page <= 0)
-                request.Page = 1;
+            var mode = request.Mode.Trim().ToLowerInvariant();
+            if (mode != "career" && mode != "season" && mode != "peak" && mode != "start")
+                return BadRequest("Mode must be one of: career, season, peak, start.");
 
-            if (request.PageSize <= 0)
-                request.PageSize = 25;
+            // peak/start require NSeasons
+            if ((mode == "peak" || mode == "start") && (!request.NSeasons.HasValue || request.NSeasons.Value <= 0))
+                return BadRequest("NSeasons is required and must be > 0 for peak/start modes.");
+
+            if (request.Page <= 0) request.Page = 1;
+            if (request.PageSize <= 0) request.PageSize = 25;
 
             var result = _recommendationService.CalculateGoatScores(request);
             return Ok(result);
