@@ -52,11 +52,12 @@ namespace NBASimilarPlayerGenerator.Controllers
 
         [HttpGet("season/{playerId}/{season}")]
         public IActionResult GetSeasonRecommendations(
-            string playerId,
-            int season,
-            [FromQuery] string? groupsPreset,
-            [FromQuery] string? groups,
-            [FromQuery] int topN = 10)
+    string playerId,
+    int season,
+    [FromQuery] string? groupsPreset,
+    [FromQuery] string? groups,
+    [FromQuery] int topN = 10,
+    [FromQuery] bool limitOnePerPlayer = false)
         {
             if (string.IsNullOrWhiteSpace(playerId) || season <= 0)
                 return BadRequest("Invalid player ID or season.");
@@ -65,6 +66,7 @@ namespace NBASimilarPlayerGenerator.Controllers
             {
                 GroupsPreset = groupsPreset,
                 TopN = topN,
+                LimitOnePerPlayer = limitOnePerPlayer,
                 Groups = groups?
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .ToList()
@@ -104,12 +106,13 @@ namespace NBASimilarPlayerGenerator.Controllers
 
         [HttpGet("peak/{playerId}")]
         public IActionResult GetPeakRecommendations(
-            string playerId,
-            [FromQuery] int fromSeason,
-            [FromQuery] int toSeason,
-            [FromQuery] string? groupsPreset,
-            [FromQuery] string? groups,
-            [FromQuery] int topN = 10)
+    string playerId,
+    [FromQuery] int fromSeason,
+    [FromQuery] int toSeason,
+    [FromQuery] string? groupsPreset,
+    [FromQuery] string? groups,
+    [FromQuery] int topN = 10,
+    [FromQuery] bool limitOnePerPlayer = false)
         {
             if (string.IsNullOrWhiteSpace(playerId) || fromSeason <= 0 || toSeason <= 0)
                 return BadRequest("Invalid player ID or seasons.");
@@ -118,6 +121,7 @@ namespace NBASimilarPlayerGenerator.Controllers
             {
                 GroupsPreset = groupsPreset,
                 TopN = topN,
+                LimitOnePerPlayer = limitOnePerPlayer,
                 Groups = groups?
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .ToList()

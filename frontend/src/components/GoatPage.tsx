@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { STAT_GROUP_CONFIG, STAT_LABELS } from "../statsConfig";
 import { GoatMode, GoatPlayerResult, GoatResponse } from "../types";
@@ -96,6 +96,7 @@ export default function GoatPage() {
   // Single canonical weight map (keyed by SEASON stat keys)
   const [weightInputs, setWeightInputs] = useState<WeightMap>({});
   const [nSeasonsInput, setNSeasonsInput] = useState<string>("5"); // pick a default you like
+  const [limitOnePerPlayer, setLimitOnePerPlayer] = useState(false);
 
   const [results, setResults] = useState<GoatPlayerResult[]>([]);
   const [page, setPage] = useState(1);
@@ -240,6 +241,10 @@ export default function GoatPage() {
         page: targetPage,
         pageSize: targetPageSize,
         weights: backendWeights,
+        limitOnePerPlayer:
+          modeToUse === "season" || modeToUse === "peak"
+            ? limitOnePerPlayer
+            : false,
       };
 
       if (
@@ -376,6 +381,24 @@ export default function GoatPage() {
       [rowKey]: !prev[rowKey],
     }));
   }
+
+  useEffect(() => {
+    // Only relevant for season + peak (the only modes that send this flag)
+    if (mode !== "season" && mode !== "peak") return;
+
+    // Clear calculated state so user must re-run Calculate with the new flag
+    setResults([]);
+    setLastWeightsUsed(null);
+    setErrorMsg(null);
+
+    // Reset paging + expanded UI
+    setPage(1);
+    setPageInput("");
+    setTotalPages(0);
+    setTotalCount(0);
+    setExpandedRows({});
+    setShowAllStatsRows({});
+  }, [limitOnePerPlayer, mode]);
 
   function renderStatGroupsForPlayer(
     player: GoatPlayerResult,
@@ -825,6 +848,25 @@ export default function GoatPage() {
                 ? "Ranks each player by their best contiguous N-season span."
                 : "Ranks each player by their first N seasons."}
             </div>
+          </div>
+        )}
+
+        {(mode === "season" || mode === "peak") && (
+          <div style={{ marginBottom: "12px", fontSize: "0.95rem" }}>
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={limitOnePerPlayer}
+                onChange={(e) => setLimitOnePerPlayer(e.target.checked)}
+              />
+              Limit results to one per player
+            </label>
           </div>
         )}
 

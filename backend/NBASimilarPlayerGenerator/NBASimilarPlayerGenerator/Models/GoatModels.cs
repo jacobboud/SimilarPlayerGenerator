@@ -5,22 +5,18 @@ namespace NBASimilarPlayerGenerator.Models
 {
     public class GoatRequest
     {
-        /// <summary>
-        /// "career", "season", "peak", or "start". Defaults to "career".
-        /// </summary>
         public string? Mode { get; set; }
-
-        /// <summary>
-        /// Used for "peak" and "start" modes:
-        /// - peak: N-season window size
-        /// - start: first N seasons
-        /// </summary>
         public int? NSeasons { get; set; }
-
         public Dictionary<string, double>? Weights { get; set; }
 
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 25;
+
+        /// <summary>
+        /// Only applies to Season + Peak modes.
+        /// If true, return at most one result per player (best season/peak window).
+        /// </summary>
+        public bool LimitOnePerPlayer { get; set; } = false;
     }
 
     public class GoatPlayerResult

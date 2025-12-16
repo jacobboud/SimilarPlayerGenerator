@@ -1008,10 +1008,27 @@ namespace NBASimilarPlayerGenerator.Services
                 }
             }
 
-            var top = sims
-                .OrderByDescending(s => s.Score)
-                .Take(options.TopN)
-                .ToList();
+            var orderedSims = sims.OrderByDescending(s => s.Score);
+
+            List<(string Key, double Score)> top;
+            if (options.LimitOnePerPlayer)
+            {
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                top = orderedSims
+                    .Where(s =>
+                    {
+                        var pidPart = s.Key.Split('_')[0];
+                        return seen.Add(pidPart);
+                    })
+                    .Take(options.TopN)
+                    .ToList();
+            }
+            else
+            {
+                top = orderedSims
+                    .Take(options.TopN)
+                    .ToList();
+            }
 
             foreach (var (key, score) in top)
             {
@@ -1391,10 +1408,27 @@ namespace NBASimilarPlayerGenerator.Services
                 }
             }
 
-            var top = sims
-                .OrderByDescending(s => s.Score)
-                .Take(options.TopN)
-                .ToList();
+            var orderedSims = sims.OrderByDescending(s => s.Score);
+
+            List<(int RowIndex, string Key, double Score)> top;
+            if (options.LimitOnePerPlayer)
+            {
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                top = orderedSims
+                    .Where(s =>
+                    {
+                        var pidPart = s.Key.Split('|')[0];
+                        return seen.Add(pidPart);
+                    })
+                    .Take(options.TopN)
+                    .ToList();
+            }
+            else
+            {
+                top = orderedSims
+                    .Take(options.TopN)
+                    .ToList();
+            }
 
             foreach (var (rowIndex, key, score) in top)
             {
@@ -1692,6 +1726,7 @@ namespace NBASimilarPlayerGenerator.Services
             }
 
             int? nSeasons = request.NSeasons;
+            bool limitOnePerPlayer = request.LimitOnePerPlayer;
 
             int page = request.Page <= 0 ? 1 : request.Page;
             int pageSize = request.PageSize <= 0 ? 25 : request.PageSize;
@@ -1719,6 +1754,11 @@ namespace NBASimilarPlayerGenerator.Services
 
             if (mode == "season")
             {
+                Dictionary<string, GoatPlayerResult>? bestByPlayer =
+                    limitOnePerPlayer
+                        ? new Dictionary<string, GoatPlayerResult>(StringComparer.OrdinalIgnoreCase)
+                        : null;
+
                 foreach (var rowDyn in _seasonRows)
                 {
                     var row = (IDictionary<string, object?>)rowDyn;
@@ -1750,7 +1790,6 @@ namespace NBASimilarPlayerGenerator.Services
                         }
                     }
 
-                    // Skip rows that had no overlap with the chosen stats
                     if (!hasContribution)
                         continue;
 
@@ -1758,29 +1797,20 @@ namespace NBASimilarPlayerGenerator.Services
                     var name = basePlayer?.Name ?? row["player"]?.ToString() ?? playerId;
                     var years = season.ToString();
 
-                    string? team = null;
-                    if (row.ContainsKey("team"))
-                    {
-                        team = row["team"]?.ToString();
-                    }
+                    string? team = row.ContainsKey("team") ? row["team"]?.ToString() : null;
 
-                    // Collect all numeric stats for later display in the UI
                     var statsDict = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
                     foreach (var kvp in row)
                     {
                         if (TryGetNumericOrBool(kvp.Value, out var v))
-                        {
                             statsDict[kvp.Key] = v;
-                        }
                     }
 
                     var teams = new List<string>();
                     if (!string.IsNullOrWhiteSpace(team))
-                    {
                         teams.Add(team);
-                    }
 
-                    results.Add(new GoatPlayerResult
+                    var candidate = new GoatPlayerResult
                     {
                         PlayerId = playerId,
                         Name = name ?? playerId,
@@ -1789,8 +1819,21 @@ namespace NBASimilarPlayerGenerator.Services
                         Season = season,
                         GoatScore = score,
                         Stats = statsDict
-                    });
+                    };
+
+                    if (!limitOnePerPlayer)
+                    {
+                        results.Add(candidate);
+                    }
+                    else
+                    {
+                        if (!bestByPlayer!.TryGetValue(playerId, out var existing) || candidate.GoatScore > existing.GoatScore)
+                            bestByPlayer[playerId] = candidate;
+                    }
                 }
+
+                if (limitOnePerPlayer && bestByPlayer != null)
+                    results = bestByPlayer.Values.ToList();
             }
             else if (mode == "peak")
             {
@@ -1833,7 +1876,10 @@ namespace NBASimilarPlayerGenerator.Services
                 }
 
                 // Best window per playerId
-                var bestByPlayer = new Dictionary<string, GoatPlayerResult>(StringComparer.OrdinalIgnoreCase);
+                Dictionary<string, GoatPlayerResult>? bestByPlayer =
+                    limitOnePerPlayer
+                        ? new Dictionary<string, GoatPlayerResult>(StringComparer.OrdinalIgnoreCase)
+                        : null;
 
                 foreach (var rowDyn in allRows)
                 {
@@ -1897,13 +1943,19 @@ namespace NBASimilarPlayerGenerator.Services
                         Stats = statsDict
                     };
 
-                    if (!bestByPlayer.TryGetValue(playerId, out var existing) || candidate.GoatScore > existing.GoatScore)
+                    if (!limitOnePerPlayer)
                     {
-                        bestByPlayer[playerId] = candidate;
+                        results.Add(candidate);
+                    }
+                    else
+                    {
+                        if (!bestByPlayer!.TryGetValue(playerId, out var existing) || candidate.GoatScore > existing.GoatScore)
+                            bestByPlayer[playerId] = candidate;
                     }
                 }
 
-                results = bestByPlayer.Values.ToList();
+                if (limitOnePerPlayer && bestByPlayer != null)
+                    results = bestByPlayer.Values.ToList();
             }
             else if (mode == "start")
             {

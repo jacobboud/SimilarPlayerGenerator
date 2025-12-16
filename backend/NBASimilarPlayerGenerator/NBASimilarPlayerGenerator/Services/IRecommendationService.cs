@@ -43,20 +43,15 @@ namespace NBASimilarPlayerGenerator.Services
 
     public class RecommendationOptions
     {
-        /// <summary>
-        /// "stats", "accolades", "all", or null (defaults to "stats")
-        /// </summary>
         public string? GroupsPreset { get; set; }
-
-        /// <summary>
-        /// Explicit stat groups, e.g. ["Per Game", "Totals"].
-        /// If provided, overrides GroupsPreset.
-        /// </summary>
         public List<string>? Groups { get; set; }
+        public int TopN { get; set; } = 10;
 
         /// <summary>
-        /// Number of similar players to return.
+        /// Only applies to Season + Peak modes.
+        /// If true, return at most one result per player (best-ranked by similarity).
         /// </summary>
-        public int TopN { get; set; } = 10;
+        public bool LimitOnePerPlayer { get; set; } = false;
     }
+
 }

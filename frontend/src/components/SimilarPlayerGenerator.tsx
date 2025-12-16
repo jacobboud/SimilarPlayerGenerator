@@ -43,6 +43,7 @@ export default function SimilarPlayerGenerator() {
   const [startWindowPlayer, setStartWindowPlayer] = useState<Player | null>(
     null
   );
+  const [limitOnePerPlayer, setLimitOnePerPlayer] = useState(false);
 
   // Groups + topN for recommendations
   const [groupsPreset, setGroupsPreset] = useState<GroupsPreset>("stats");
@@ -107,7 +108,7 @@ export default function SimilarPlayerGenerator() {
     }
   };
 
-  const buildRecommendationParams = (topN: number) => {
+  const buildRecommendationParams = (topN: number, limitOne?: boolean) => {
     const params = new URLSearchParams();
     params.set("topN", String(topN));
 
@@ -117,6 +118,11 @@ export default function SimilarPlayerGenerator() {
       }
     } else if (groupsPreset) {
       params.set("groupsPreset", groupsPreset);
+    }
+
+    // only attach when explicitly provided
+    if (limitOne != null) {
+      params.set("limitOnePerPlayer", String(limitOne));
     }
 
     return params.toString();
@@ -151,6 +157,7 @@ export default function SimilarPlayerGenerator() {
       setPeakWindowPlayer(null);
       setStartSeasonsInput("");
       setStartWindowPlayer(null);
+      setLimitOnePerPlayer(false);
 
       if (Array.isArray(res.data) && res.data.length === 0) {
         setNoResultsMessage(
@@ -195,6 +202,7 @@ export default function SimilarPlayerGenerator() {
       setPeakWindowPlayer(null);
       setStartSeasonsInput("");
       setStartWindowPlayer(null);
+      setLimitOnePerPlayer(false);
     } catch (err) {
       console.error("Season fetch failed:", err);
     }
@@ -217,7 +225,12 @@ export default function SimilarPlayerGenerator() {
     // Keep the UI in sync with the clamped value
     setTopNInput(String(parsed));
 
-    const params = buildRecommendationParams(parsed);
+    const includeLimit =
+      statsTab === "season" || statsTab === "peak"
+        ? limitOnePerPlayer
+        : undefined;
+
+    const params = buildRecommendationParams(parsed, includeLimit);
 
     // Figure out which groups we *requested*,
     // so we can limit visible stat groups for recs.
@@ -269,15 +282,22 @@ export default function SimilarPlayerGenerator() {
       usedSeasonForCall = null; // peak windows use "career-like" stats
     } else if (statsTab === "start") {
       // start window similarity
-      const n = parseInt(startSeasonsInput, 10);
+      let n = parseInt(startSeasonsInput, 10);
       if (!Number.isFinite(n) || n <= 0) {
         setWarnings([
           "Please enter a positive number of seasons for the start window.",
         ]);
         return;
       }
+
+      const maxN = seasons.length;
+      if (maxN > 0 && n > maxN) {
+        n = maxN;
+        setStartSeasonsInput(String(maxN)); // keep UI in sync
+      }
+
       url = `${baseUrl}similarplayer/start/${selectedPlayer.playerId}?nSeasons=${n}&${params}`;
-      usedSeasonForCall = null; // start windows use "career-like" stats
+      usedSeasonForCall = null;
     } else {
       // default to full career similarity
       url = `${baseUrl}similarplayer/career/${selectedPlayer.playerId}?${params}`;
@@ -540,6 +560,7 @@ export default function SimilarPlayerGenerator() {
     peakStartSeason,
     peakEndSeason,
     startSeasonsInput,
+    limitOnePerPlayer,
   ]);
 
   useEffect(() => {
@@ -1010,17 +1031,58 @@ export default function SimilarPlayerGenerator() {
             {/* Start tab controls: N seasons input */}
             {statsTab === "start" && (
               <div style={{ marginBottom: "12px" }}>
-                <label>
-                  First{" "}
-                  <input
-                    type="number"
-                    min={1}
-                    value={startSeasonsInput}
-                    onChange={(e) => setStartSeasonsInput(e.target.value)}
-                    style={{ width: "70px", margin: "0 4px" }}
-                  />{" "}
-                  seasons (from start of career)
-                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <label>
+                    First{" "}
+                    <input
+                      type="number"
+                      min={1}
+                      max={seasons.length || undefined}
+                      value={startSeasonsInput}
+                      onChange={(e) => setStartSeasonsInput(e.target.value)}
+                      style={{ width: "70px", margin: "0 4px" }}
+                    />{" "}
+                    seasons (from start of career)
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (seasons.length > 0)
+                        setStartSeasonsInput(String(seasons.length));
+                    }}
+                    disabled={seasons.length === 0}
+                    style={{
+                      padding: "6px 14px",
+                      backgroundColor: "var(--color-secondary)",
+                      color: "var(--color-primary-contrast)",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: seasons.length === 0 ? "default" : "pointer",
+                      opacity: seasons.length === 0 ? 0.6 : 1,
+                    }}
+                  >
+                    Max
+                  </button>
+
+                  <span
+                    style={{
+                      color: "var(--color-text-muted)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {seasons.length > 0
+                      ? `${seasons.length} seasons available`
+                      : "No seasons available"}
+                  </span>
+                </div>
               </div>
             )}
 
@@ -1230,6 +1292,25 @@ export default function SimilarPlayerGenerator() {
           >
             {comparisonExplanation}
           </div>
+
+          {(statsTab === "season" || statsTab === "peak") && (
+            <div style={{ marginBottom: "12px", fontSize: "0.95rem" }}>
+              <label
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={limitOnePerPlayer}
+                  onChange={(e) => setLimitOnePerPlayer(e.target.checked)}
+                />
+                Limit results to one per player
+              </label>
+            </div>
+          )}
 
           <button
             onClick={generateRecommendations}
